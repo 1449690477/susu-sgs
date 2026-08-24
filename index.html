@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎴 苏苏的三国小杀场 · 竹简烽火</title>
+<style>
+  /* 竹简烽火主题（方案 9.3-A）：米黄纸底 + 朱砂 + 墨。全部走 token，换皮只改这里 */
+  :root {
+    --paper: #f4eddb;        /* 竹简底 */
+    --paper-deep: #eadfc4;
+    --panel: #fdf8ec;
+    --ink: #2c261d;
+    --ink-soft: #6b5f4c;
+    --seal: #b3392b;         /* 朱砂 */
+    --seal-deep: #8e2b20;
+    --seal-soft: #f5ded8;
+    --bronze: #4a6b5d;       /* 青铜绿 */
+    --bronze-soft: #dde8e2;
+    --gold: #b98a2f;
+    --rule: #d8cbaa;
+    --black-suit: #2c261d;
+    --red-suit: #b3392b;
+    --shadow: 0 10px 30px rgba(44, 38, 29, 0.16);
+    --radius: 14px;
+    --font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font); color: var(--ink);
+    background:
+      radial-gradient(900px 420px at 85% -60px, rgba(179, 57, 43, 0.10), transparent 70%),
+      radial-gradient(700px 400px at 8% 12%, rgba(74, 107, 93, 0.12), transparent 75%),
+      linear-gradient(180deg, #efe6cf 0%, var(--paper) 45%, #efe4c8 100%);
+    min-height: 100vh; user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 10px 10px 150px; }
+
+  header { text-align: center; margin: 6px 0 10px; }
+  .title-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--panel); border: 2px solid var(--rule); border-radius: 999px;
+    padding: 6px 22px; box-shadow: var(--shadow);
+  }
+  .title-pill h1 { font-size: 18px; font-weight: 800; letter-spacing: 1px; }
+  .title-pill .badge {
+    font-size: 10.5px; color: #fff; background: linear-gradient(135deg, var(--seal), var(--seal-deep));
+    border-radius: 999px; padding: 2px 9px; font-weight: 800;
+  }
+
+  .card {
+    background: var(--panel); border: 2px solid var(--rule);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+  }
+
+  /* ---------- 进门卡 ---------- */
+  #enterCard { max-width: 440px; margin: 26px auto 0; padding: 26px 26px; text-align: center; }
+  #enterCard h2 { font-size: 19px; font-weight: 800; margin-bottom: 4px; }
+  #enterCard p.sub { color: var(--ink-soft); font-size: 12.5px; margin-bottom: 16px; line-height: 1.6; }
+  .field { text-align: left; margin-bottom: 11px; }
+  .field label { display: block; font-size: 12px; font-weight: 700; color: var(--ink-soft); margin: 0 0 4px 4px; }
+  .field input {
+    width: 100%; border: 2px solid var(--rule); border-radius: 10px; padding: 9px 13px;
+    font-size: 14px; color: var(--ink); background: #fff; font-family: inherit; outline: none;
+  }
+  .field input:focus { border-color: var(--seal); box-shadow: 0 0 0 3px rgba(179, 57, 43, 0.15); }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border: none; cursor: pointer; border-radius: 999px; font-size: 14px; font-weight: 800;
+    padding: 10px 22px; color: #fff; background: linear-gradient(135deg, var(--seal), var(--seal-deep));
+    box-shadow: 0 6px 16px rgba(179, 57, 43, 0.35); font-family: inherit; transition: transform .12s, filter .12s;
+  }
+  .btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+  .btn:active { transform: translateY(1px) scale(.98); }
+  .btn.ghost { background: #fff; color: var(--ink); border: 2px solid var(--rule); box-shadow: none; }
+  .btn.ghost:hover { border-color: var(--seal); color: var(--seal); }
+  .btn.bronze { background: linear-gradient(135deg, var(--bronze), #35544a); box-shadow: 0 6px 16px rgba(74,107,93,.35); }
+  .btn.small { font-size: 12.5px; padding: 7px 14px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  #enterTip { display: none; margin-top: 12px; padding: 9px 12px; background: var(--seal-soft);
+    border: 1.5px solid var(--seal); border-radius: 10px; color: var(--seal-deep); font-size: 12.5px; font-weight: 700; }
+
+  /* ---------- 大厅（座位表） ---------- */
+  #lobbyCard { display: none; margin-top: 12px; padding: 18px; }
+  #lobbyCard h3 { font-size: 15px; font-weight: 800; margin-bottom: 10px; }
+  .lobby-seats { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+  .lobby-seat {
+    display: flex; align-items: center; gap: 8px; background: #fff;
+    border: 1.5px solid var(--rule); border-radius: 10px; padding: 8px 12px; font-size: 13.5px;
+  }
+  .lobby-seat .no { font-weight: 800; color: var(--seal); min-width: 42px; }
+  .lobby-seat .tag { font-size: 10.5px; border-radius: 999px; padding: 1px 8px; font-weight: 800; }
+  .tag.owner { background: var(--seal-soft); color: var(--seal-deep); }
+  .tag.susu { background: var(--bronze-soft); color: var(--bronze); }
+  .tag.host { background: #eee; color: #777; }
+
+  /* ---------- 牌桌 ---------- */
+  #tableCard { display: none; margin-top: 10px; padding: 12px 12px 14px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+    gap: 6px; padding-bottom: 8px; border-bottom: 2px dashed var(--rule); margin-bottom: 10px; }
+  .status-pill { display: inline-flex; align-items: center; gap: 7px; background: #fff;
+    border: 1.5px solid var(--rule); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; }
+  .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--seal);
+    box-shadow: 0 0 6px var(--seal); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.5); opacity: .6; } }
+  .spec-badge { display: none; align-items: center; gap: 4px; background: var(--bronze-soft);
+    border: 1.5px solid var(--bronze); border-radius: 999px; padding: 5px 12px;
+    font-size: 11.5px; font-weight: 800; color: var(--bronze); }
+
+  /* 对家座位条：横滚 */
+  .foes { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; }
+  .foes::-webkit-scrollbar { height: 4px; }
+  .foes::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 99px; }
+  .foe {
+    flex: 0 0 auto; width: 128px; background: #fff; border: 2px solid var(--rule);
+    border-radius: 12px; padding: 8px 9px; font-size: 11.5px; position: relative;
+  }
+  .foe.current { border-color: var(--seal); box-shadow: 0 0 0 2px rgba(179,57,43,.25); }
+  .foe.dead { opacity: .45; filter: grayscale(.8); }
+  .foe .nm { font-weight: 800; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .foe .gen { color: var(--ink-soft); font-size: 11px; }
+  .foe .idn { position: absolute; top: 6px; right: 7px; font-size: 10px; font-weight: 800;
+    background: var(--paper-deep); border-radius: 6px; padding: 1px 5px; color: var(--ink-soft); }
+  .foe .idn.lord { background: var(--gold); color: #fff; }
+  .foe .idn.shown { background: var(--seal-soft); color: var(--seal-deep); }
+  .foe .hp { margin-top: 3px; letter-spacing: 1px; font-size: 11px; }
+  .foe .rows { margin-top: 3px; color: var(--ink-soft); line-height: 1.5; min-height: 30px; }
+  .foe .askmark { position: absolute; bottom: 6px; right: 7px; font-size: 13px; animation: pulse 1.2s infinite; }
+
+  /* 中央结算区 */
+  .center { background: var(--paper-deep); border: 2px solid var(--rule); border-radius: 12px;
+    padding: 8px 12px; margin: 6px 0 8px; }
+  .center .banner { font-size: 13px; font-weight: 700; min-height: 20px; }
+  .center .discard-row { display: flex; align-items: center; gap: 6px; margin-top: 5px;
+    font-size: 11.5px; color: var(--ink-soft); flex-wrap: wrap; }
+
+  /* 日志 + 聊天 */
+  .feed { height: 120px; overflow-y: auto; background: #fff; border: 1.5px solid var(--rule);
+    border-radius: 10px; padding: 8px 10px; font-size: 12px; line-height: 1.65; margin-bottom: 8px; }
+  .feed::-webkit-scrollbar { width: 4px; }
+  .feed::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 99px; }
+  .feed .chatline .who { font-weight: 800; color: var(--bronze); }
+  .feed .sysline { color: #998a6d; font-style: italic; font-size: 11.5px; }
+  #chatRow { display: flex; gap: 6px; margin-bottom: 8px; }
+  #chatInput { flex: 1; border: 2px solid var(--rule); border-radius: 999px; padding: 8px 14px;
+    font-size: 13px; outline: none; font-family: inherit; background: #fff; }
+  #chatInput:focus { border-color: var(--seal); }
+
+  /* 我的区 */
+  .me-strip { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    flex-wrap: wrap; margin-bottom: 6px; font-size: 12.5px; }
+  .me-id { font-weight: 800; background: var(--seal-soft); color: var(--seal-deep);
+    border-radius: 8px; padding: 2px 9px; }
+  .me-strip .hp { letter-spacing: 1px; }
+  .hand { display: flex; gap: 7px; overflow-x: auto; padding: 6px 2px 10px; min-height: 92px; }
+  .hand::-webkit-scrollbar { height: 4px; }
+  .hand::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 99px; }
+  .pcard {
+    flex: 0 0 auto; width: 62px; height: 84px; background: #fff; border: 2px solid var(--rule);
+    border-radius: 9px; padding: 5px 6px; cursor: pointer; position: relative;
+    transition: transform .12s, border-color .12s, box-shadow .12s; font-size: 12px;
+  }
+  .pcard .corner { font-size: 11px; font-weight: 800; }
+  .pcard .cname { position: absolute; left: 6px; right: 6px; bottom: 6px; font-weight: 800;
+    font-size: 12.5px; line-height: 1.15; }
+  .pcard.red .corner, .pcard.red .cname { color: var(--red-suit); }
+  .pcard.black .corner, .pcard.black .cname { color: var(--black-suit); }
+  .pcard.usable { border-color: var(--bronze); }
+  .pcard.picked { transform: translateY(-8px); border-color: var(--seal);
+    box-shadow: 0 8px 18px rgba(179, 57, 43, .3); }
+  .pcard.disabled { opacity: .45; cursor: default; }
+  .equip-row { display: flex; gap: 6px; flex-wrap: wrap; font-size: 11px; color: var(--ink-soft);
+    margin-bottom: 6px; min-height: 16px; }
+  .equip-chip { background: var(--bronze-soft); border: 1px solid var(--bronze);
+    color: var(--bronze); border-radius: 999px; padding: 1px 8px; font-weight: 700; }
+
+  /* 询问面板：底部浮层 */
+  #askSheet {
+    display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
+    background: var(--panel); border-top: 3px solid var(--seal);
+    box-shadow: 0 -12px 40px rgba(44, 38, 29, .28); padding: 12px 14px 16px;
+  }
+  #askSheet .inner { max-width: 780px; margin: 0 auto; }
+  #askPrompt { font-size: 14px; font-weight: 800; margin-bottom: 8px; }
+  #askPrompt .cd { color: var(--seal); font-variant-numeric: tabular-nums; }
+  #askOptions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .opt-note { font-size: 11.5px; color: var(--ink-soft); width: 100%; }
+
+  /* 终局 */
+  #overlay { display: none; position: fixed; inset: 0; background: rgba(44, 38, 29, .55);
+    z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(6px); }
+  #overlayCard { max-width: 400px; width: 90%; text-align: center; padding: 28px 24px;
+    background: var(--panel); border: 3px solid var(--seal); border-radius: 16px; }
+  #overlayTitle { font-size: 21px; font-weight: 800; margin: 6px 0 8px; }
+  #overlayBody { font-size: 13px; color: var(--ink-soft); line-height: 1.8; margin-bottom: 14px; }
+
+  #toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%) translateY(20px);
+    background: rgba(44, 38, 29, .93); color: #fff; font-size: 12.5px; font-weight: 700;
+    padding: 9px 18px; border-radius: 999px; opacity: 0; pointer-events: none;
+    transition: all .25s; z-index: 200; max-width: 88vw; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .actions-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  body.spectating #chatRow { display: none; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* 构建脚本注入（deploy/sgs_pages/build_cloud_page.py），手工改这份产物会被下次构建覆盖 */
+window.SGS_CLOUD = {
+  url: 'https://cdoxbojjtwrwehrolzsc.supabase.co',
+  anonKey: 'sb_publishable_zZ7tShVjP3gNJoS2tOXfhw_BekWXGdW',
+};
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title-pill">
+      <span>🎴</span><h1>苏苏的三国小杀场</h1><span class="badge">身份场 2-8 人</span>
+    </div>
+  </header>
+
+  <!-- 进门卡 -->
+  <div id="enterCard" class="card">
+    <h2>报上名号，入座开杀</h2>
+    <p class="sub">身份场老规矩：主公明牌，其余暗着来。苏苏也坐一个位子——她抽到什么演什么，内奸可不会自爆哦。</p>
+    <div class="field"><label>🏷️ 名号（同名可断线重连）</label>
+      <input id="uid" maxlength="32" placeholder="比如：燕人张三"></div>
+    <div class="field"><label>✨ 桌上称呼（可选）</label>
+      <input id="nick" maxlength="32" placeholder="留空就用名号"></div>
+    <div class="field"><label>🔑 房间暗号（未设防可留空）</label>
+      <input id="code" maxlength="64" placeholder="没有暗号就留空"></div>
+    <!-- QQ 验证进房：仅云端版显示（本地页没有验证管线） -->
+    <div id="qqBlock" style="display:none;">
+      <div class="field"><label>🐧 QQ 登录（可选：验过她才认识你）</label>
+        <input id="qqNum" maxlength="12" placeholder="QQ 号（5-12 位数字）"></div>
+      <div id="qqStep2" style="display:none;">
+        <div class="field"><label>把验证码用 QQ 私聊发给苏苏，然后点「查收」</label>
+          <div id="qqCode" style="font-size:26px; letter-spacing:6px; text-align:center; padding:6px 0;"></div></div>
+        <button class="btn bronze" id="qqCheckBtn" style="width:100%;">查收 ✅</button>
+      </div>
+      <button class="btn ghost" id="qqReqBtn" style="width:100%; margin-top:8px;">获取验证码 📮</button>
+    </div>
+    <button class="btn" id="joinBtn" style="width:100%; margin-top:6px;">入座 🪑</button>
+    <button class="btn ghost" id="spectateBtn" style="width:100%; margin-top:8px;">👀 只看不打 · 观战席（上限 10）</button>
+    <div id="enterTip"></div>
+  </div>
+
+  <!-- 大厅 -->
+  <div id="lobbyCard" class="card">
+    <h3>🏮 凑人中 · <span id="lobbyCount">0</span> 人已入座</h3>
+    <div class="lobby-seats" id="lobbySeats"></div>
+    <div class="actions-row">
+      <button class="btn" id="startBtn" style="display:none;">开局 ⚔️</button>
+      <button class="btn bronze" id="inviteSusuBtn">请苏苏入座 🍑</button>
+      <button class="btn ghost small" id="leaveLobbyBtn">离座</button>
+    </div>
+    <p style="margin-top:9px; font-size:11.5px; color:var(--ink-soft);">
+      至少 2 人可开（配苏苏 3 人起有内味）；5 人局＝主1忠1反2内1 最经典。只有 1 号房主能点开局。</p>
+  </div>
+
+  <!-- 牌桌 -->
+  <div id="tableCard" class="card">
+    <div class="topbar">
+      <div class="status-pill"><span class="dot"></span><span id="statusText">备局中…</span></div>
+      <div class="actions-row">
+        <span class="spec-badge" id="specBadge">👀 <span id="specCount">0</span>/10</span>
+        <button class="btn ghost small" id="nudgeBtn">👉 催一催</button>
+        <button class="btn ghost small" id="leaveBtn">🚪 离座</button>
+      </div>
+    </div>
+    <div class="foes" id="foes"></div>
+    <div class="center">
+      <div class="banner" id="banner">🏮 等待开局…</div>
+      <div class="discard-row" id="discardRow"></div>
+    </div>
+    <div class="feed" id="feed"></div>
+    <div id="chatRow">
+      <input type="text" id="chatInput" placeholder="桌上聊两句…" maxlength="200"
+             onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="btn small" onclick="sendChat()">发送</button>
+    </div>
+    <div class="me-strip" id="meStrip"></div>
+    <div class="equip-row" id="meEquips"></div>
+    <div class="hand" id="hand"></div>
+  </div>
+</div>
+
+<!-- 询问面板 -->
+<div id="askSheet"><div class="inner">
+  <div id="askPrompt"></div>
+  <div id="askOptions"></div>
+</div></div>
+
+<!-- 终局 -->
+<div id="overlay"><div id="overlayCard">
+  <div style="font-size:44px;" id="overlayIcon">🏆</div>
+  <div id="overlayTitle"></div>
+  <div id="overlayBody"></div>
+  <button class="btn" onclick="location.reload()">回到门口 🏮</button>
+  <button class="btn ghost" onclick="$('overlay').style.display='none'">看看牌桌</button>
+</div></div>
+
+<div id="toast"></div>
+<script>
+/* ============================================================
+   苏苏三国小杀场 · M1 本地页（协议按方案第 7/8 节逐字，禁止臆想）
+   事实源 = 服务端推的 state_sync 全量视角快照；页面只是渲染器 + 应答器。
+   五子棋祖训：不本地先画、seq 去重、断线 catch_up。
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const SUIT_CHAR = { spade: "♠", heart: "♥", club: "♣", diamond: "♦" };
+const SUIT_RED = { spade: false, club: false, heart: true, diamond: true };
+const RANK_CHAR = { 1: "A", 11: "J", 12: "Q", 13: "K" };
+const PHASE_NAMES = { prepare: "准备", judge: "判定", draw: "摸牌", play: "出牌",
+                      discard: "弃牌", end: "结束" };
+const IDENTITY_ICON = { "主公": "👑", "忠臣": "🛡️", "反贼": "⚔️", "内奸": "🎭", "?": "❔" };
+
+const state = {
+  role: null,          // "seat" | "spectator"
+  seat: null,
+  seatToken: "",
+  roomCode: "",
+  snapshot: null,      // 服务端最新快照（含 lobby + game）
+  ask: null,           // 当前对我的询问（全文）
+  lastSeq: 0,
+  askDeadline: 0,      // 倒计时
+  picking: null,       // 进行中的多选交互 {kind, ids:Set, need, ...}
+};
+let ws = null, wsClosed = false, cdTimer = null;
+
+function showToast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2400);
+}
+function rankText(r) { return RANK_CHAR[r] || String(r); }
+function cardLabel(c) { return `${SUIT_CHAR[c.suit] || "?"}${rankText(c.rank)}·${c.name}`; }
+function escapeHtml(s) {
+  return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function nicknameOf(seat) {
+  const seats = (state.snapshot && state.snapshot.seats) || [];
+  const hit = seats.find((s) => s.seat === seat);
+  return hit ? hit.nickname : `${seat + 1}号`;
+}
+
+/* ---------------- REST ---------------- */
+async function api(path, body) {
+  if (CLOUD) return cloudApi(path, body);
+  const res = await fetch(`/api/sgs/${path}`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  let data = {};
+  try { data = await res.json(); } catch (e) {}
+  if (!res.ok) throw new Error(data.detail || `请求失败(${res.status})`);
+  return data;
+}
+
+/* ---------------- 云端传输（GitHub Pages ↔ Supabase 信箱 ↔ 家里的牌桌） ----------
+   与本地页共用同一份事件处理（handleMessage 就一个，方案 7.1）：
+   · 匿名登录拿会话指纹（auth_uid）→ 写信一律过云函数 sgs-post（验口令/格式/限速）
+   · 收信轮询 sgs_events：RLS 只放行"寄给自己指纹"的行，没报到的一行都读不到
+   · 观战 = spectate 报到 + 每 20s 心跳续座（家里 45s 没心跳就让位）
+   · seat_token 永不下发到云端——它只存在家里的桥里，页面上没有可偷的凭据 */
+const CLOUD = (window.SGS_CLOUD && window.supabase) ? window.SGS_CLOUD : null;
+const cloud = {
+  client: null, uid: null, accessToken: "", lastId: 0,
+  started: false, timer: null, hbTimer: null, waiters: [],
+};
+function cloudInit() {
+  if (!CLOUD) return;
+  cloud.client = supabase.createClient(CLOUD.url, CLOUD.anonKey);
+}
+async function cloudSession() {
+  if (cloud.uid && cloud.accessToken) return;
+  const { data: s } = await cloud.client.auth.getSession();
+  if (s && s.session) {
+    cloud.uid = s.session.user.id;
+    cloud.accessToken = s.session.access_token;
+    return;
+  }
+  const { data, error } = await cloud.client.auth.signInAnonymously();
+  if (error) throw new Error("匿名登录失败：" + error.message);
+  cloud.uid = data.user.id;
+  cloud.accessToken = (data.session && data.session.access_token) || "";
+}
+async function cloudStartPolling() {
+  if (cloud.started) return;
+  cloud.started = true;
+  await cloudSession();
+  try {
+    const { data } = await cloud.client
+      .from("sgs_events").select("id").order("id", { ascending: false }).limit(1);
+    cloud.lastId = (data && data[0] && data[0].id) || 0;
+  } catch (e) { cloud.lastId = 0; }
+  cloudPoll();
+}
+async function cloudPoll() {
+  if (wsClosed) return;
+  try {
+    const { data } = await cloud.client
+      .from("sgs_events").select("*")
+      .gt("id", cloud.lastId).eq("by", "susu")
+      .order("id", { ascending: true }).limit(50);
+    for (const row of (data || [])) {
+      cloud.lastId = Math.max(cloud.lastId, row.id);
+      cloudDispatch({ ...(row.payload || {}), type: row.type });
+    }
+  } catch (e) {}
+  cloudSweepWaiters();
+  cloud.timer = setTimeout(() => cloudPoll(), 1200);
+}
+function cloudDispatch(ev) {
+  for (let i = 0; i < cloud.waiters.length; i++) {
+    const w = cloud.waiters[i];
+    if (!w.cancelled && w.match(ev)) {
+      cloud.waiters.splice(i, 1);
+      w.resolve(ev);
+      return;
+    }
+  }
+  // 验证流/观战回执只给等它的人；没人等就丢弃，别灌进牌局事件流
+  if (["verify_code", "verify_result", "spectate_denied"].includes(ev.type)) return;
+  handleMessage(ev);
+}
+function cloudSweepWaiters() {
+  const now = Date.now();
+  cloud.waiters = cloud.waiters.filter((w) => {
+    if (w.cancelled) return false;
+    if (now > w.deadline) { w.reject(new Error(w.timeoutMsg || "云端没回应，稍后再试")); return false; }
+    return true;
+  });
+}
+function cloudWaiter(match, ms, timeoutMsg) {
+  const w = { match, deadline: Date.now() + ms, timeoutMsg, cancelled: false };
+  w.promise = new Promise((resolve, reject) => { w.resolve = resolve; w.reject = reject; });
+  w.cancel = () => { w.cancelled = true; };
+  cloud.waiters.push(w);
+  return w;
+}
+async function cloudPost(type, payload) {
+  await cloudSession();
+  if (!cloud.started) await cloudStartPolling();
+  const { data, error } = await cloud.client.functions.invoke("sgs-post", {
+    body: { room_code: state.roomCode, type, payload },
+  });
+  if (error) {
+    let msg = error.message || "没送出去";
+    try {
+      const ctx = error.context;
+      if (ctx && typeof ctx.json === "function") {
+        const j = await ctx.json();
+        if (j && j.error) msg = j.error;
+      }
+    } catch (e) {}
+    throw new Error(msg);
+  }
+  if (data && data.ok === false) throw new Error(data.error || "没送出去");
+}
+/* REST 路径 → 云端事件类型（白名单按方案 7.3；座位身份全走指纹，不捎凭据） */
+async function cloudApi(path, body) {
+  if (path === "join") {
+    await cloudPost("join", { user_id: body.user_id, nickname: body.nickname,
+                              intro: body.intro || "", login: body.login || "anon",
+                              seat_pref: body.seat_pref });
+    return { ok: true };  // 座位回音走信箱，见 doJoin 的 waiter
+  }
+  if (path === "start") return cloudPost("start", {});
+  if (path === "answer") return cloudPost("answer", { ask_id: body.ask_id, choice: body.choice });
+  if (path === "chat") return cloudPost("chat", { text: body.text });
+  if (path === "action") return cloudPost("action", { action: body.action });
+  if (path === "susu/join") throw new Error("云端暂不能请苏苏——让本地玩家点「请苏苏入座」");
+  throw new Error("云端不认识的接口: " + path);
+}
+
+async function sendAnswer(choice) {
+  if (!state.ask) return;
+  const askId = state.ask.ask_id;
+  try {
+    await api("answer", { seat_token: state.seatToken, ask_id: askId,
+                          choice, room_code: state.roomCode });
+    // 成了：面板由后续 state_sync/ask_cancel 收走；先乐观收起防连点
+    hideAsk();
+  } catch (e) {
+    showToast(e.message || "这一手没送出去");
+    renderAsk(); // 非法作答服务端会重发同一 ask：把面板原样摆回来
+  }
+}
+function sendChat() {
+  const input = $("chatInput");
+  const text = input.value.trim();
+  if (!text || !state.seatToken) return;
+  input.value = "";
+  api("chat", { seat_token: state.seatToken, text, room_code: state.roomCode })
+    .catch((e) => showToast(e.message));
+}
+
+/* ---------------- WS（本地）/ 信箱轮询（云端） ---------------- */
+function connectWS(spectate) {
+  if (CLOUD) { cloudStartPolling().catch((e) => showToast(e.message)); return; }
+  const proto = location.protocol === "https:" ? "wss:" : "ws:";
+  const qs = spectate
+    ? `?mode=spectate&room_code=${encodeURIComponent(state.roomCode)}`
+    : `?seat_token=${encodeURIComponent(state.seatToken)}&room_code=${encodeURIComponent(state.roomCode)}`;
+  ws = new WebSocket(`${proto}//${location.host}/api/sgs/ws${qs}`);
+  ws.onmessage = (evt) => {
+    let msg = null;
+    try { msg = JSON.parse(evt.data); } catch (e) { return; }
+    handleMessage(msg);
+  };
+  ws.onclose = (evt) => {
+    if (wsClosed) return;
+    if (evt && evt.code === 4403) {
+      showToast(spectate ? "暗号不对，观战席进不去 🔑" : "凭据失效，请重新入座");
+      setTimeout(() => location.reload(), 1400); return;
+    }
+    if (evt && evt.code === 4409) {
+      showToast("观战席满了（10 人），等会儿再来 👀");
+      setTimeout(() => location.reload(), 1400); return;
+    }
+    setTimeout(() => { if (!wsClosed) connectWS(spectate); }, 2500);
+  };
+  ws.onopen = () => {
+    if (state.lastSeq > 0) {
+      try { ws.send(JSON.stringify({ type: "catch_up", since: state.lastSeq })); } catch (e) {}
+    }
+  };
+}
+
+/* ---------------- 事件处理（协议 7.2） ---------------- */
+function handleMessage(msg) {
+  if (typeof msg.seq === "number") {
+    if (msg.seq <= state.lastSeq) return;   // 底账重放，看过了
+    state.lastSeq = msg.seq;
+  }
+  switch (msg.type) {
+    case "state_sync": {
+      // 云端桥的回音带 role/seat：入座与刷新报到都靠它认领身份
+      if (msg.role) state.role = msg.role;
+      if (typeof msg.seat === "number") state.seat = msg.seat;
+      state.snapshot = msg.snapshot || {};
+      const game = state.snapshot.game;
+      // 我的未决询问以快照为准（断线重连恢复浮层就靠它）
+      if (state.role === "seat" && game && game.ask) setAsk(game.ask);
+      else if (!game || !game.ask) hideAsk(true);
+      if (state.role === "seat") { try { localStorage.setItem("sgs_cloud_seated", "1"); } catch (e) {} }
+      renderAll();
+      break;
+    }
+    case "ask":       // 私件：问到我头上了
+      setAsk(msg.ask);
+      break;
+    case "ask_cancel":
+      if (state.ask && msg.ask_id === state.ask.ask_id) hideAsk(true);
+      break;
+    case "log":
+      addFeed(`${msg.icon || "🎴"} ${msg.text}`, "sysline");
+      setBanner(msg.text);
+      break;
+    case "turn":
+      // 阶段横幅由 state_sync 统一刷；这里只记日志节拍
+      break;
+    case "card_move":
+      break; // v1 不做位移动画；state_sync 已是事实源
+    case "chat":
+      addFeed(`<span class="who">${escapeHtml(msg.nickname)}:</span> ${escapeHtml(msg.text)}`, "chatline", true);
+      break;
+    case "system":
+      addFeed(`🏮 ${escapeHtml(msg.message)}`, "sysline", true);
+      break;
+    case "seats":
+      if (state.snapshot) { state.snapshot.seats = msg.seats; renderAll(); }
+      break;
+    case "spectators":
+      $("specCount").textContent = String(msg.count ?? 0);
+      $("specBadge").style.display = (msg.count > 0 || state.role === "spectator") ? "inline-flex" : "none";
+      break;
+    case "game_over":
+      showGameOver(msg);
+      break;
+    case "susu_error":
+      // 云端动作被家里拒了（口令外的业务错：座位冲突/非法作答等）
+      showToast(msg.message || "那边没办成");
+      if (state.role === null) {
+        const tip = $("enterTip");
+        tip.textContent = msg.message || "那边没办成"; tip.style.display = "block";
+      }
+      break;
+  }
+}
+
+function addFeed(html, cls, isHtml) {
+  const feed = $("feed");
+  const div = document.createElement("div");
+  div.className = cls || "";
+  if (isHtml) div.innerHTML = html; else div.textContent = html;
+  feed.appendChild(div);
+  while (feed.children.length > 200) feed.removeChild(feed.firstChild);
+  feed.scrollTop = feed.scrollHeight;
+}
+function setBanner(text) { $("banner").textContent = text; }
+
+/* ---------------- 入座 / 观战 / 大厅 ---------------- */
+async function doJoin() {
+  const uid = $("uid").value.trim();
+  if (!uid) { showToast("先报个名号"); $("uid").focus(); return; }
+  const nick = $("nick").value.trim() || uid;
+  state.roomCode = $("code").value.trim();
+  try { localStorage.setItem("sgs_uid", uid); localStorage.setItem("sgs_code", state.roomCode); } catch (e) {}
+  if (CLOUD) {
+    // 云端：先备好耳朵再敲门——入座回音（state_sync）和拒绝（susu_error）都别漏
+    try {
+      await cloudSession(); await cloudStartPolling();
+      const w = cloudWaiter(
+        (e) => (e.type === "state_sync" && e.role === "seat") || e.type === "susu_error",
+        20000, "云端没回应——苏苏可能不在线，过会儿再试");
+      try { await cloudApi("join", { user_id: uid, nickname: nick, login: "anon" }); }
+      catch (e) { w.cancel(); throw e; }
+      const ev = await w.promise;
+      if (ev.type === "susu_error") throw new Error(ev.message || "入座被拒");
+      handleMessage(ev);
+      $("enterCard").style.display = "none";
+      showToast(`入座成功，你是 ${state.seat + 1} 号位`);
+    } catch (e) {
+      $("enterTip").textContent = e.message; $("enterTip").style.display = "block";
+    }
+    return;
+  }
+  try {
+    const r = await api("join", { user_id: uid, nickname: nick, login: "anon",
+                                  room_code: state.roomCode });
+    state.role = "seat"; state.seat = r.seat; state.seatToken = r.seat_token;
+    $("enterCard").style.display = "none";
+    showToast(r.rejoin ? "回到座位上了 🪑" : `入座成功，你是 ${r.seat + 1} 号位`);
+    connectWS(false);
+  } catch (e) {
+    $("enterTip").textContent = e.message; $("enterTip").style.display = "block";
+  }
+}
+async function doSpectate() {
+  state.roomCode = $("code").value.trim();
+  state.role = "spectator";
+  document.body.classList.add("spectating");
+  $("enterCard").style.display = "none";
+  $("specBadge").style.display = "inline-flex";
+  $("nudgeBtn").style.display = "none";
+  $("leaveBtn").textContent = "🚪 离开观战";
+  if (CLOUD) {
+    // 云端观战：报到等回执，坐下后每 20s 心跳续座（家里 45s 没心跳就让位）
+    try {
+      await cloudSession(); await cloudStartPolling();
+      const w = cloudWaiter(
+        (e) => (e.type === "state_sync" && e.spectate_ok) || e.type === "spectate_denied",
+        20000, "云端没回应——苏苏可能不在线，过会儿再试");
+      try { await cloudPost("spectate", {}); } catch (e) { w.cancel(); throw e; }
+      const ev = await w.promise;
+      if (ev.type === "spectate_denied") throw new Error(ev.message || "观战席满啦，等会儿再来看吧");
+      handleMessage(ev);
+      clearInterval(cloud.hbTimer);
+      cloud.hbTimer = setInterval(() => { cloudPost("spectate", {}).catch(() => {}); }, 20000);
+      showToast("👀 观战席就座——看得到台面，看不到任何人的手牌和身份");
+    } catch (e) {
+      wsClosed = true;
+      showToast(e.message);
+      setTimeout(() => location.reload(), 1600);
+    }
+    return;
+  }
+  connectWS(true);
+  showToast("👀 观战席就座——看得到台面，看不到任何人的手牌和身份");
+}
+async function inviteSusu() {
+  try {
+    await api("susu/join", { room_code: state.roomCode });
+    showToast("苏苏来了 🍑");
+  } catch (e) { showToast(e.message || "苏苏没来成"); }
+}
+async function startGame() {
+  try { await api("start", { seat_token: state.seatToken, room_code: state.roomCode }); }
+  catch (e) { showToast(e.message); }
+}
+async function doLeave() {
+  if (state.role === "spectator") {
+    wsClosed = true;
+    if (CLOUD) {
+      // keepalive 直邮：关标签页/刷新时也尽量把离席信送出去，别占着空位 45 秒
+      clearInterval(cloud.hbTimer);
+      try {
+        fetch(CLOUD.url + "/functions/v1/sgs-post", {
+          method: "POST", keepalive: true,
+          headers: { "Content-Type": "application/json", "apikey": CLOUD.anonKey,
+                     "Authorization": "Bearer " + cloud.accessToken },
+          body: JSON.stringify({ room_code: state.roomCode, type: "spectate_leave", payload: {} }),
+        }).catch(() => {});
+      } catch (e) {}
+    }
+    try { ws && ws.close(); } catch (e) {}
+    location.reload();
+    return;
+  }
+  try { await api("action", { seat_token: state.seatToken, action: "leave", room_code: state.roomCode }); } catch (e) {}
+  wsClosed = true; try { ws && ws.close(); } catch (e) {}
+  location.reload();
+}
+
+/* ---------------- 渲染 ---------------- */
+function renderAll() {
+  const snap = state.snapshot;
+  if (!snap) return;
+  const inGame = snap.phase === "playing" || snap.phase === "finished";
+  $("lobbyCard").style.display = (!inGame && state.role) ? "block" : "none";
+  $("tableCard").style.display = inGame ? "block" : "none";
+  if (!inGame) { renderLobby(snap); return; }
+  renderTable(snap);
+}
+
+function renderLobby(snap) {
+  $("lobbyCount").textContent = String(snap.seat_count || 0);
+  const box = $("lobbySeats");
+  box.innerHTML = "";
+  for (const s of snap.seats || []) {
+    const div = document.createElement("div");
+    div.className = "lobby-seat";
+    const tags = [];
+    if (s.is_owner) tags.push('<span class="tag owner">房主</span>');
+    if (s.login === "susu") tags.push('<span class="tag susu">苏苏</span>');
+    if (s.hosted) tags.push('<span class="tag host">托管</span>');
+    div.innerHTML = `<span class="no">${s.seat + 1} 号</span>` +
+      `<span>${escapeHtml(s.nickname)}</span>` + tags.join("");
+    box.appendChild(div);
+  }
+  const meOwner = (snap.seats || []).some((s) => s.seat === state.seat && s.is_owner);
+  $("startBtn").style.display = (meOwner && (snap.seat_count || 0) >= 2) ? "" : "none";
+  $("inviteSusuBtn").style.display =
+    (state.role === "seat" && !CLOUD && !(snap.seats || []).some((s) => s.login === "susu")) ? "" : "none";
+}
+
+function renderTable(snap) {
+  const game = snap.game;
+  if (!game) return;
+  const cur = game.current_seat;
+  const phaseName = PHASE_NAMES[game.phase] || game.phase || "";
+  if (game.game_over && game.result) {
+    $("statusText").textContent = `第 ${snap.game_no} 局结束`;
+  } else {
+    $("statusText").textContent =
+      `第 ${snap.game_no} 局 · 第 ${game.round} 轮 · ${nicknameOf(cur)} 的${phaseName}阶段`;
+  }
+  // 对家条（观战 = 全员条）
+  const foes = $("foes");
+  foes.innerHTML = "";
+  const askSeats = new Set((game.pending || []).map((a) => a.seat));
+  for (const p of game.players || []) {
+    if (state.role === "seat" && p.seat === state.seat) continue;
+    foes.appendChild(renderFoe(p, snap, cur, askSeats));
+  }
+  // 弃牌堆
+  const dr = $("discardRow");
+  const recent = (game.discard || []).slice(-4).reverse();
+  dr.innerHTML = `<b>弃牌 ${game.discard_count}</b> · 牌堆 ${game.deck_count}` +
+    (recent.length ? " ｜ 最近：" + recent.map((c) =>
+      `<span style="color:${SUIT_RED[c.suit] ? "var(--red-suit)" : "var(--black-suit)"}">${cardLabel(c)}</span>`
+    ).join("、") : "");
+  renderMe(snap);
+}
+
+function renderFoe(p, snap, cur, askSeats) {
+  const div = document.createElement("div");
+  div.className = "foe" + (p.seat === cur ? " current" : "") + (p.alive ? "" : " dead");
+  const idName = p.identity_name || "?";
+  const idCls = idName === "主公" ? "lord" : (p.identity_revealed ? "shown" : "");
+  const equips = Object.values(p.equips || {}).filter(Boolean).map((c) => c.name);
+  const judge = (p.judge_zone || []).map((c) => c.name === "闪电" ? "⚡" : "🔒" + c.name);
+  div.innerHTML =
+    `<div class="idn ${idCls}">${IDENTITY_ICON[idName] || "❔"}${idName}</div>` +
+    `<div class="nm">${escapeHtml(nicknameOf(p.seat))}</div>` +
+    `<div class="gen">${escapeHtml(p.general || "未选将")}</div>` +
+    `<div class="hp">${"❤️".repeat(Math.max(p.hp, 0))}${"🖤".repeat(Math.max(p.max_hp - p.hp, 0))}</div>` +
+    `<div class="rows">🂠×${p.hand_count}${equips.length ? "<br>⚙ " + equips.join("/") : ""}` +
+    `${judge.length ? "<br>" + judge.join(" ") : ""}</div>` +
+    (askSeats.has(p.seat) && p.alive ? `<div class="askmark">⏳</div>` : "") +
+    (!p.alive ? `<div class="askmark">💀</div>` : "");
+  return div;
+}
+
+function renderMe(snap) {
+  const game = snap.game;
+  if (state.role !== "seat" || !game || !game.me) {
+    $("meStrip").innerHTML = `<span>👀 观战视角：手牌与身份不可见</span>`;
+    $("meEquips").innerHTML = ""; $("hand").innerHTML = "";
+    return;
+  }
+  const me = game.me;
+  const mine = (game.players || []).find((p) => p.seat === me.seat) || {};
+  const phase = PHASE_NAMES[game.phase] || "";
+  $("meStrip").innerHTML =
+    `<span class="me-id">${IDENTITY_ICON[me.identity_name] || ""}${me.identity_name}</span>` +
+    `<span><b>${escapeHtml(mine.general || "")}</b> · ${escapeHtml(nicknameOf(me.seat))}</span>` +
+    `<span class="hp">${"❤️".repeat(Math.max(mine.hp || 0, 0))}${"🖤".repeat(Math.max((mine.max_hp || 0) - (mine.hp || 0), 0))}</span>`;
+  const equips = Object.entries(mine.equips || {}).filter(([, c]) => c);
+  $("meEquips").innerHTML = equips.length
+    ? equips.map(([, c]) => `<span class="equip-chip">${cardLabel(c)}</span>`).join("")
+    : `<span style="opacity:.6">装备区空着</span>`;
+  renderHand(me.hand || []);
+}
+
+function renderHand(cards) {
+  const box = $("hand");
+  box.innerHTML = "";
+  const ask = state.ask;
+  // 当前询问允许点的 card_id 集合（预取选项直接映射，7.5 优化②）
+  const usable = usableCardIds(ask);
+  for (const c of cards) {
+    const div = document.createElement("div");
+    const red = SUIT_RED[c.suit];
+    const canUse = usable === null || usable.has(c.id);
+    div.className = `pcard ${red ? "red" : "black"}` +
+      (canUse ? " usable" : " disabled") +
+      (state.picking && state.picking.ids.has(c.id) ? " picked" : "");
+    div.innerHTML = `<div class="corner">${SUIT_CHAR[c.suit]}${rankText(c.rank)}</div>` +
+      `<div class="cname">${escapeHtml(c.name)}</div>`;
+    div.onclick = () => onHandCardClick(c);
+    box.appendChild(div);
+  }
+  if (!cards.length) box.innerHTML = `<div style="opacity:.55; font-size:12px; padding:20px 8px;">（空手）</div>`;
+}
+</script>
+<script>
+/* ---------------- 询问面板（方案 6.5 全 kind） ---------------- */
+function setAsk(ask) {
+  if (!ask) return;
+  if (state.ask && state.ask.ask_id === ask.ask_id) { state.ask = ask; renderAsk(); return; }
+  state.ask = ask;
+  state.picking = null;
+  state.askDeadline = Date.now() + (Number(ask.timeout_s) || 45) * 1000;
+  renderAsk();
+  renderAll();       // 手牌可用态跟着询问变
+}
+function hideAsk(clearAsk) {
+  if (clearAsk) { state.ask = null; state.picking = null; }
+  $("askSheet").style.display = "none";
+  if (cdTimer) { clearInterval(cdTimer); cdTimer = null; }
+}
+function remainSec() { return Math.max(0, Math.ceil((state.askDeadline - Date.now()) / 1000)); }
+
+function renderAsk() {
+  const ask = state.ask;
+  if (!ask || state.role !== "seat") { hideAsk(); return; }
+  $("askSheet").style.display = "block";
+  $("askPrompt").innerHTML =
+    `${escapeHtml(ask.prompt || "轮到你决定")} <span class="cd">⏳<span id="cdNum">${remainSec()}</span>s</span>`;
+  if (cdTimer) clearInterval(cdTimer);
+  cdTimer = setInterval(() => {
+    const el = $("cdNum");
+    if (el) el.textContent = String(remainSec());
+  }, 500);
+  const box = $("askOptions");
+  box.innerHTML = "";
+  const builder = ASK_BUILDERS[ask.kind];
+  if (builder) builder(box, ask);
+  else box.appendChild(btn("知道了（按默认）", () => sendAnswer(ask.default || {}), "ghost"));
+  renderAll();
+}
+
+function btn(text, onclick, cls) {
+  const b = document.createElement("button");
+  b.className = `btn small${cls ? " " + cls : ""}`;
+  b.textContent = text;
+  b.onclick = onclick;
+  return b;
+}
+function note(box, text) {
+  const d = document.createElement("div");
+  d.className = "opt-note"; d.textContent = text;
+  box.appendChild(d);
+}
+function findMyCard(cardId) {
+  const hand = (((state.snapshot || {}).game || {}).me || {}).hand || [];
+  return hand.find((c) => c.id === cardId);
+}
+function cardBtnLabel(entry) {
+  const card = findMyCard(entry.card_id);
+  const base = card ? cardLabel(card) : `#${entry.card_id}`;
+  return entry.as && card && entry.as !== card.name ? `${base}▶当${entry.as}` : base;
+}
+
+/* 每种 kind 的面板搭建器 */
+const ASK_BUILDERS = {
+  choose_general(box, ask) {
+    for (const g of (ask.options.generals || [])) {
+      box.appendChild(btn(g, () => sendAnswer({ general: g })));
+    }
+  },
+
+  play_phase(box, ask) {
+    note(box, `点手牌出牌（亮绿边的能出）· 本回合还能出杀 ${ask.options.sha_left === null ? "∞" : ask.options.sha_left} 次`);
+    for (const sk of (ask.options.skills || [])) {
+      box.appendChild(btn(`技能·${sk.skill}`, () => startSkillFlow(sk), "bronze"));
+    }
+    if (ask.options.zhangba) {
+      box.appendChild(btn("🔱 丈八：两张当杀", () => startPick({
+        kind: "zhangba", pool: new Set(ask.options.zhangba_from), need: 2,
+        hint: "选两张手牌合成一张【杀】",
+        done: (ids) => sendAnswer({ play: "card", card_ids: ids, as: "杀" }),
+      }), "bronze"));
+    }
+    box.appendChild(btn("结束出牌 ➡️", () => sendAnswer({ play: "end" }), "ghost"));
+  },
+
+  choose_targets(box, ask) {
+    const min = ask.options.min ?? 1, max = ask.options.max ?? 1;
+    const chosen = new Set();
+    note(box, `${ask.options.prompt || "选择目标"}（选 ${min}${max > min ? "-" + max : ""} 个）`);
+    const confirm = btn(`确认目标`, () => sendAnswer({ targets: [...chosen] }));
+    confirm.disabled = min > 0;
+    for (const t of (ask.options.targets || [])) {
+      const b = btn(`${nicknameOf(t)}`, () => {
+        if (chosen.has(t)) chosen.delete(t);
+        else {
+          if (max === 1) chosen.clear();
+          if (chosen.size >= max) return showToast(`最多选 ${max} 个`);
+          chosen.add(t);
+        }
+        b.classList.toggle("bronze", chosen.has(t));
+        for (const other of box.querySelectorAll("button[data-t]")) {
+          const tv = Number(other.dataset.t);
+          other.classList.toggle("bronze", chosen.has(tv));
+        }
+        confirm.disabled = chosen.size < min || chosen.size > max;
+        if (max === 1 && chosen.size === 1) sendAnswer({ targets: [...chosen] });
+      }, "ghost");
+      b.dataset.t = String(t);
+      box.appendChild(b);
+    }
+    if (max !== 1) box.appendChild(confirm);
+    if (ask.options.allow_cancel !== false) {
+      box.appendChild(btn("不出了（取消）", () => sendAnswer({ targets: [] }), "ghost"));
+    }
+  },
+
+  ask_shan(box, ask) { buildResponse(box, ask, "闪"); },
+  ask_sha(box, ask) { buildResponse(box, ask, "杀"); },
+  ask_sha_for_duel(box, ask) { buildResponse(box, ask, "杀"); },
+
+  ask_wuxie(box, ask) {
+    const st = ask.options.state === -1 ? "目前将【失效】" : "目前将【生效】";
+    note(box, `【${ask.options.trick}】对 ${nicknameOf(ask.options.target)} ${st}——要改写吗？`);
+    const first = (ask.options.cards || [])[0];
+    if (first !== undefined) {
+      box.appendChild(btn("🌀 打出无懈可击", () => sendAnswer({ use: true, card_id: first })));
+    }
+    box.appendChild(btn("不响应", () => sendAnswer({ use: false }), "ghost"));
+  },
+
+  ask_tao(box, ask) {
+    const taos = ask.options.cards || [];
+    const dyingName = nicknameOf(ask.options.dying);
+    const need = Math.max(1, 1 - Number(ask.options.hp ?? 0));
+    note(box, `${dyingName} 倒下了（体力 ${ask.options.hp}），拉回 1 点要 ${need} 张桃`);
+    for (let n = 1; n <= taos.length; n++) {
+      box.appendChild(btn(`🍑 出 ${n} 张桃`, () => sendAnswer({ use: true, card_ids: taos.slice(0, n) })));
+      if (n >= need) break;   // 多出的桃引擎也不会消耗，别摆一排按钮
+    }
+    box.appendChild(btn("见死不救", () => sendAnswer({ use: false }), "ghost"));
+  },
+
+  discard_n(box, ask) {
+    const n = ask.options.n ?? 1;
+    note(box, `${ask.prompt || `弃 ${n} 张牌`}（点手牌勾选）`);
+    if (ask.options.allow_damage) {
+      box.appendChild(btn("💢 不弃了，受 1 点伤", () => sendAnswer({ take_damage: true }), "ghost"));
+    }
+    if (ask.options.allow_let_draw) {
+      box.appendChild(btn("🎁 让对方摸一张", () => sendAnswer({ let_draw: true }), "ghost"));
+    }
+    startPick({
+      kind: "discard", pool: new Set(ask.options.selectable || []), need: n,
+      hint: `已选 0/${n}`,
+      done: (ids) => sendAnswer({ card_ids: ids }),
+      keepPanel: true,
+    });
+  },
+
+  choose_card_from(box, ask) {
+    note(box, ask.prompt || "选一张牌");
+    for (const zone of (ask.options.zones || [])) {
+      if (zone.zone === "hand") {
+        for (let i = 0; i < (zone.count || 0); i++) {
+          box.appendChild(btn(`🂠 手牌${i + 1}`, () => sendAnswer({ zone: "hand", index: i }), "ghost"));
+        }
+      } else {
+        (zone.cards || []).forEach((c, i) => {
+          box.appendChild(btn(`${zone.zone === "judge" ? "🔒" : "⚙"} ${cardLabel(c)}`,
+            () => sendAnswer({ zone: zone.zone, index: i }), "ghost"));
+        });
+      }
+    }
+  },
+
+  skill_invoke(box, ask) {
+    const choices = ask.options.choices || [];
+    if (choices.length) {
+      for (const c of choices) {
+        box.appendChild(btn(`发动（${c}）`, () => sendAnswer({ use: true, option: c })));
+      }
+    } else {
+      box.appendChild(btn(`发动【${ask.options.skill || "技能"}】`, () => sendAnswer({ use: true })));
+    }
+    box.appendChild(btn("不发动", () => sendAnswer({ use: false }), "ghost"));
+  },
+};
+
+/* 杀/闪响应面板：卡按钮 + 八卦 + 丈八 */
+function buildResponse(box, ask, need) {
+  for (const entry of (ask.options.cards || [])) {
+    box.appendChild(btn(`打出 ${cardBtnLabel(entry)}`,
+      () => sendAnswer({ use: true, card_id: entry.card_id })));
+  }
+  if (ask.options.bagua) {
+    box.appendChild(btn("☯️ 八卦阵判定", () => sendAnswer({ use: true, via: "bagua" }), "bronze"));
+  }
+  if (ask.options.zhangba) {
+    box.appendChild(btn("🔱 丈八两张当杀", () => startPick({
+      kind: "zhangba", pool: new Set(ask.options.zhangba_from || []), need: 2,
+      hint: "选两张手牌合成【杀】",
+      done: (ids) => sendAnswer({ use: true, card_ids: ids, via: "zhangba" }),
+    }), "bronze"));
+  }
+  box.appendChild(btn(need === "闪" ? "不闪（挨这一下）" : "不出杀", () => sendAnswer({ use: false }), "ghost"));
+}
+
+/* ---------------- 手牌多选交互 ---------------- */
+function startPick(cfg) {
+  state.picking = { ...cfg, ids: new Set() };
+  const box = $("askOptions");
+  if (!cfg.keepPanel) box.innerHTML = "";
+  note(box, cfg.hint || "点手牌勾选");
+  const confirm = btn("✅ 确认", () => {
+    const ids = [...state.picking.ids];
+    state.picking = null;
+    cfg.done(ids);
+  });
+  confirm.disabled = true;
+  confirm.id = "pickConfirm";
+  box.appendChild(confirm);
+  box.appendChild(btn("↩️ 重选", () => { renderAsk(); }, "ghost"));
+  renderAll();
+}
+
+function usableCardIds(ask) {
+  if (state.picking) return state.picking.pool;
+  if (!ask) return new Set();          // 没轮到我：手牌全灰（还能看，不能点）
+  const o = ask.options || {};
+  switch (ask.kind) {
+    case "play_phase": return new Set((o.plays || []).map((p) => p.card_id));
+    case "ask_shan": case "ask_sha": case "ask_sha_for_duel":
+      return new Set((o.cards || []).map((c) => c.card_id));
+    case "ask_wuxie": return new Set(o.cards || []);
+    case "ask_tao": return new Set(o.cards || []);
+    case "discard_n": return new Set(o.selectable || []);
+    default: return new Set();
+  }
+}
+
+function onHandCardClick(card) {
+  const ask = state.ask;
+  // 多选进行中：勾选/取消
+  if (state.picking) {
+    const p = state.picking;
+    if (!p.pool.has(card.id)) return showToast("这张不在可选之列");
+    if (p.ids.has(card.id)) p.ids.delete(card.id);
+    else if (p.ids.size < p.need) p.ids.add(card.id);
+    else return showToast(`只能选 ${p.need} 张`);
+    const confirm = $("pickConfirm");
+    if (confirm) confirm.disabled = p.ids.size !== p.need;
+    const hint = document.querySelector("#askOptions .opt-note");
+    if (hint) hint.textContent = `已选 ${p.ids.size}/${p.need}`;
+    renderAll();
+    return;
+  }
+  if (!ask) return;
+  const o = ask.options || {};
+  if (ask.kind === "play_phase") {
+    const usages = (o.plays || []).filter((p) => p.card_id === card.id);
+    if (!usages.length) return showToast("这张现在出不了");
+    if (usages.length === 1) return sendAnswer({ play: "card", card_id: card.id, as: usages[0].as });
+    // 多用法（如龙胆/武圣）：临时按钮选用法
+    const box = $("askOptions");
+    box.innerHTML = "";
+    note(box, `【${cardLabel(card)}】怎么用？`);
+    for (const u of usages) {
+      box.appendChild(btn(`当【${u.as}】`, () => sendAnswer({ play: "card", card_id: card.id, as: u.as })));
+    }
+    box.appendChild(btn("↩️ 算了", () => renderAsk(), "ghost"));
+    return;
+  }
+  if (["ask_shan", "ask_sha", "ask_sha_for_duel"].includes(ask.kind)) {
+    const entry = (o.cards || []).find((c) => c.card_id === card.id);
+    if (entry) return sendAnswer({ use: true, card_id: card.id });
+  }
+  if (ask.kind === "ask_wuxie" && (o.cards || []).includes(card.id)) {
+    return sendAnswer({ use: true, card_id: card.id });
+  }
+}
+
+/* 技能流：仁德（选牌+选人）/ 制衡（选牌） */
+function startSkillFlow(sk) {
+  const hint = sk.args_hint || {};
+  if (sk.skill === "制衡") {
+    startPickAny({
+      pool: new Set(hint.hand_ids || []),
+      hint: "制衡：勾选任意张手牌弃掉，摸等量",
+      done: (ids) => sendAnswer({ play: "skill", skill: "制衡", args: { card_ids: ids } }),
+    });
+    return;
+  }
+  if (sk.skill === "仁德") {
+    startPickAny({
+      pool: new Set(hint.hand_ids || []),
+      hint: "仁德：勾选要送出的手牌，再选收牌的人",
+      done: (ids) => {
+        const box = $("askOptions");
+        box.innerHTML = "";
+        note(box, "送给谁？");
+        for (const t of (hint.targets || [])) {
+          box.appendChild(btn(nicknameOf(t),
+            () => sendAnswer({ play: "skill", skill: "仁德", args: { target: t, card_ids: ids } })));
+        }
+        box.appendChild(btn("↩️ 算了", () => renderAsk(), "ghost"));
+      },
+    });
+    return;
+  }
+  showToast("这个技能面板还没接（按方案不该出现）");
+}
+/* 任意张数的勾选（仁德/制衡：至少 1 张） */
+function startPickAny(cfg) {
+  state.picking = { kind: "any", pool: cfg.pool, need: Infinity, ids: new Set(), done: cfg.done };
+  const box = $("askOptions");
+  box.innerHTML = "";
+  note(box, cfg.hint);
+  const confirm = btn("✅ 就这些", () => {
+    const ids = [...state.picking.ids];
+    if (!ids.length) return showToast("至少选一张");
+    state.picking = null;
+    cfg.done(ids);
+  });
+  confirm.id = "pickConfirm";
+  box.appendChild(confirm);
+  box.appendChild(btn("↩️ 算了", () => renderAsk(), "ghost"));
+  renderAll();
+}
+
+/* ---------------- 终局 ---------------- */
+let overShown = false;
+function showGameOver(msg) {
+  if (overShown) return;
+  overShown = true;
+  const camp = { lord: "主公与忠臣", rebel: "反贼", traitor: "内奸" }[msg.winner_camp] || msg.winner_camp;
+  const idn = { lord: "主公", loyalist: "忠臣", rebel: "反贼", traitor: "内奸" };
+  const lines = Object.entries(msg.identities || {})
+    .map(([s, i]) => `${nicknameOf(Number(s))} — ${IDENTITY_ICON[idn[i]] || ""}${idn[i] || i}`)
+    .join("<br>");
+  $("overlayIcon").textContent = msg.winner_camp === "traitor" ? "🎭" : (msg.winner_camp === "rebel" ? "⚔️" : "👑");
+  $("overlayTitle").textContent = `${camp} 胜！`;
+  $("overlayBody").innerHTML = `${escapeHtml(msg.summary || "")}<br><br><b>身份揭晓</b><br>${lines}`;
+  $("overlay").style.display = "flex";
+  hideAsk(true);
+}
+
+/* ---------------- 挂载 ---------------- */
+$("joinBtn").addEventListener("click", doJoin);
+$("spectateBtn").addEventListener("click", doSpectate);
+$("startBtn").addEventListener("click", startGame);
+$("inviteSusuBtn").addEventListener("click", inviteSusu);
+$("leaveLobbyBtn").addEventListener("click", doLeave);
+$("leaveBtn").addEventListener("click", doLeave);
+$("nudgeBtn").addEventListener("click", () => {
+  if (state.seatToken || CLOUD) api("action", { seat_token: state.seatToken, action: "nudge",
+                                                room_code: state.roomCode }).catch(() => {});
+});
+
+/* ---------------- 云端 QQ 验证（8.3 照五子棋：私聊验证码验明正身） ---------------- */
+async function qqRequestCode() {
+  const qq = $("qqNum").value.trim();
+  if (!/^\d{5,12}$/.test(qq)) { showToast("QQ 号得是 5-12 位数字"); return; }
+  try {
+    await cloudSession(); await cloudStartPolling();
+    const w = cloudWaiter((e) => e.type === "verify_code" && e.qq === qq, 20000, "云端没回应，稍后再试");
+    try { await cloudPost("verify_request", { qq }); } catch (e) { w.cancel(); throw e; }
+    const ev = await w.promise;
+    if (ev.error) throw new Error(ev.error);
+    $("qqCode").textContent = ev.code || "------";
+    $("qqStep2").style.display = "block";
+    showToast("验证码出来了，用 QQ 私聊发给苏苏 📮");
+  } catch (e) { showToast(e.message); }
+}
+async function qqCheckAndJoin() {
+  const qq = $("qqNum").value.trim();
+  try {
+    const w = cloudWaiter((e) => e.type === "verify_result" && e.qq === qq, 20000, "云端没回应，稍后再试");
+    try { await cloudPost("verify_check", { qq }); } catch (e) { w.cancel(); throw e; }
+    const ev = await w.promise;
+    if (ev.status !== "verified") { showToast("苏苏还没收到验证码，发完再点我"); return; }
+    // 验过了：用这个 QQ 入座（桥会核对"本次刚验过"才放行）
+    $("uid").value = qq;
+    if (!$("nick").value.trim() && ev.nickname) $("nick").value = ev.nickname;
+    const nick = $("nick").value.trim() || qq;
+    state.roomCode = $("code").value.trim();
+    const w2 = cloudWaiter(
+      (e) => (e.type === "state_sync" && e.role === "seat") || e.type === "susu_error",
+      20000, "云端没回应——过会儿再试");
+    try { await cloudApi("join", { user_id: qq, nickname: nick, login: "qq" }); }
+    catch (e) { w2.cancel(); throw e; }
+    const ev2 = await w2.promise;
+    if (ev2.type === "susu_error") throw new Error(ev2.message || "入座被拒");
+    handleMessage(ev2);
+    $("enterCard").style.display = "none";
+    showToast(`验明正身，${nick} 入座 ${state.seat + 1} 号位 ✅`);
+  } catch (e) { showToast(e.message); }
+}
+
+cloudInit();
+if (CLOUD) {
+  $("qqBlock").style.display = "block";
+  $("inviteSusuBtn").style.display = "none";  // 云端暂不能请苏苏（7.3 白名单没这门）
+  $("qqReqBtn").addEventListener("click", qqRequestCode);
+  $("qqCheckBtn").addEventListener("click", qqCheckAndJoin);
+}
+window.addEventListener("DOMContentLoaded", () => {
+  try {
+    const uid = localStorage.getItem("sgs_uid") || "";
+    const code = localStorage.getItem("sgs_code") || "";
+    if (uid) $("uid").value = uid;
+    if (code) $("code").value = code;
+    // 云端刷新恢复：上次在这入过座就发 ready 报到，桥会回本人最新视角快照
+    if (CLOUD && code && localStorage.getItem("sgs_cloud_seated") === "1") {
+      state.roomCode = code;
+      cloudSession().then(() => cloudStartPolling()).then(() => {
+        const w = cloudWaiter((e) => e.type === "state_sync", 20000, "");
+        return cloudPost("ready", {}).then(() => w.promise);
+      }).then((ev) => {
+        handleMessage(ev);
+        if (state.role === "seat") {
+          $("enterCard").style.display = "none";
+          showToast("回到牌桌上了 🪑");
+        }
+      }).catch(() => {});
+    }
+  } catch (e) {}
+});
+</script>
+</body>
+</html>
