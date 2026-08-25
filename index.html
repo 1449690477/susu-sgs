@@ -111,7 +111,48 @@
 
   /* 绒布桌面：背景图由 JS 按本地/云端前缀注入 */
   #tableFelt { padding: 10px 10px 12px; background-color: #221b12;
-    background-size: cover; background-position: center; }
+    background-size: cover; background-position: center; position: relative; isolation: isolate; }
+
+  /* 动作关系层：结构化 actor→targets，不靠解析日志文字 */
+  #actionFxLayer { position: absolute; inset: 0; z-index: 35; pointer-events: none; overflow: hidden; }
+  #actionFxSvg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .action-arrow { fill: none; stroke: #ffd05a; stroke-width: 4; stroke-linecap: round;
+    filter: drop-shadow(0 0 7px rgba(255,208,90,.95)); stroke-dasharray: 12 8;
+    animation: actionDash .8s linear infinite, actionFade 2.25s ease-out forwards; }
+  .action-arrow.damage, .action-arrow.attack, .action-arrow.fire { stroke: #ff5a42; }
+  .action-arrow.thunder { stroke: #ae7cff; }
+  .action-arrow.heal { stroke: #65e39b; }
+  .action-arrow.skill { stroke: #65cfff; }
+  .action-arrow.buff, .action-arrow.equip { stroke: #ffd05a; }
+  @keyframes actionDash { to { stroke-dashoffset: -40; } }
+  @keyframes actionFade { 0%,72% { opacity: 1; } 100% { opacity: 0; } }
+  #actionBurst { display: none; position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%);
+    min-width: 190px; max-width: 76%; padding: 11px 18px; border-radius: 14px;
+    background: rgba(22,14,8,.94); border: 2px solid #ffd05a; color: #fff; text-align: center;
+    box-shadow: 0 0 0 4px rgba(255,208,90,.16), 0 14px 32px rgba(0,0,0,.65);
+    animation: actionBurst 2.25s ease-out forwards; }
+  #actionBurst.show { display: block; }
+  #actionBurst .ab-main { font-size: 19px; font-weight: 900; letter-spacing: .5px; }
+  #actionBurst .ab-route { margin-top: 3px; font-size: 12px; color: #f3dab0; }
+  #actionBurst .ab-detail { margin-top: 2px; font-size: 11px; color: rgba(255,255,255,.72); }
+  #actionBurst.heal { border-color: #65e39b; box-shadow: 0 0 0 4px rgba(101,227,155,.16), 0 14px 32px rgba(0,0,0,.65); }
+  #actionBurst.damage, #actionBurst.attack, #actionBurst.fire { border-color: #ff5a42; }
+  #actionBurst.thunder { border-color: #ae7cff; }
+  #actionBurst.skill { border-color: #65cfff; }
+  @keyframes actionBurst { 0% { opacity: 0; transform: translate(-50%,-42%) scale(.78); }
+    12%,72% { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-58%) scale(.94); } }
+  .action-source, .action-target { position: relative; z-index: 36 !important; }
+  .action-source { outline: 4px solid #ffd05a; box-shadow: 0 0 26px rgba(255,208,90,.95) !important; }
+  .action-target { outline: 4px solid #ff5a42; box-shadow: 0 0 28px rgba(255,90,66,.95) !important;
+    animation: targetPulse .5s ease-in-out 3; }
+  .action-target.heal { outline-color: #65e39b; box-shadow: 0 0 28px rgba(101,227,155,.95) !important; }
+  .action-target.thunder { outline-color: #ae7cff; box-shadow: 0 0 28px rgba(174,124,255,.95) !important; }
+  .action-target.skill { outline-color: #65cfff; box-shadow: 0 0 28px rgba(101,207,255,.95) !important; }
+  @keyframes targetPulse { 50% { transform: scale(1.045); } }
+  .action-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    white-space: nowrap; background: #b93427; color: #fff; border-radius: 999px; padding: 3px 9px;
+    font-size: 11px; font-weight: 900; box-shadow: 0 4px 14px rgba(0,0,0,.55); z-index: 38; }
 
   /* 对家席位：武将牌挂墙一圈 */
   .foes { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; }
@@ -229,6 +270,9 @@
   /* 手机竖屏：压一档尺寸 */
   @media (max-width: 640px) {
     .foe { width: 92px; }
+    #actionBurst { top: 38%; min-width: 155px; padding: 9px 12px; }
+    #actionBurst .ab-main { font-size: 16px; }
+    .action-arrow { stroke-width: 3; }
     .foe .portrait { height: 78px; }
     .pcard { width: 62px; height: 88px; }
     .hand { min-height: 102px; }
@@ -375,6 +419,10 @@ window.SGS_CLOUD = {
       </div>
     </div>
     <div id="tableFelt">
+      <div id="actionFxLayer" aria-live="polite">
+        <svg id="actionFxSvg" aria-hidden="true"></svg>
+        <div id="actionBurst"><div class="ab-main"></div><div class="ab-route"></div><div class="ab-detail"></div></div>
+      </div>
       <div class="foes" id="foes"></div>
       <div class="center">
         <div class="pile"><img id="deckImg" alt="牌堆"><span class="cnt" id="deckCount">0</span><div>牌堆</div></div>
@@ -387,7 +435,7 @@ window.SGS_CLOUD = {
                onkeydown="if(event.key==='Enter')sendChat()">
         <button class="btn small" onclick="sendChat()">发送</button>
       </div>
-      <div class="me-zone">
+      <div class="me-zone" id="meZone" data-seat="">
         <div class="me-strip" id="meStrip"></div>
         <div class="equip-row" id="meEquips"></div>
         <div class="hand" id="hand"></div>
@@ -559,8 +607,9 @@ const state = {
   askDeadline: 0,      // 倒计时
   picking: null,       // 进行中的多选交互 {kind, ids:Set, need, ...}
   answerSending: false, // 云端函数返回前锁住本次作答，防双击写两封同 ask_id 信件
+  lastAction: null,     // 最近结构化动作，state_sync 重绘 DOM 后可恢复关系强调
 };
-let ws = null, wsClosed = false, cdTimer = null;
+let ws = null, wsClosed = false, cdTimer = null, actionTimer = null;
 
 function showToast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
@@ -576,6 +625,86 @@ function nicknameOf(seat) {
   const seats = (state.snapshot && state.snapshot.seats) || [];
   const hit = seats.find((s) => s.seat === seat);
   return hit ? hit.nickname : `${seat + 1}号`;
+}
+function seatNode(seat) {
+  if (!Number.isInteger(seat)) return null;
+  if (state.role === "seat" && seat === state.seat) return $("meZone");
+  return document.querySelector ? document.querySelector(`.foe[data-seat="${seat}"]`) : null;
+}
+function actionToneClass(tone) {
+  return ["damage", "attack", "fire", "thunder", "heal", "skill", "buff", "equip", "lose_hp"].includes(tone)
+    ? tone : "card";
+}
+function clearActionFocus() {
+  if (actionTimer) { clearTimeout(actionTimer); actionTimer = null; }
+  let focused = document.querySelectorAll ? Array.from(document.querySelectorAll(".action-source,.action-target")) : [];
+  if (!focused.length) {
+    const players = ((((state.snapshot || {}).game || {}).players) || []);
+    focused = players.map((p) => seatNode(p.seat)).filter(Boolean);
+  }
+  for (const el of focused) {
+    for (const cls of ["action-source", "action-target", "damage", "attack", "fire", "thunder", "heal", "skill", "buff", "equip", "lose_hp"]) el.classList.remove(cls);
+    for (const badge of el.querySelectorAll ? el.querySelectorAll(".action-badge") : []) {
+      if (badge.remove) badge.remove(); else if (badge.parentElement) badge.parentElement.removeChild(badge);
+    }
+  }
+  const svg = $("actionFxSvg"); if (svg) svg.innerHTML = "";
+  const burst = $("actionBurst"); if (burst) { burst.className = ""; burst.style.display = "none"; }
+}
+function drawActionArrow(actorNode, targetNode, tone) {
+  const svg = $("actionFxSvg"), felt = $("tableFelt");
+  if (!svg || !felt || !actorNode || !targetNode || actorNode === targetNode || !actorNode.getBoundingClientRect) return;
+  const fr = felt.getBoundingClientRect(), a = actorNode.getBoundingClientRect(), t = targetNode.getBoundingClientRect();
+  const x1 = a.left + a.width / 2 - fr.left, y1 = a.top + a.height / 2 - fr.top;
+  const x2 = t.left + t.width / 2 - fr.left, y2 = t.top + t.height / 2 - fr.top;
+  const bend = Math.max(34, Math.abs(x2 - x1) * .18 + Math.abs(y2 - y1) * .08);
+  const cx = (x1 + x2) / 2 + (y2 >= y1 ? bend : -bend), cy = (y1 + y2) / 2 - bend;
+  const ns = "http://www.w3.org/2000/svg";
+  let defs = svg.querySelector("defs");
+  if (!defs) {
+    defs = document.createElementNS(ns, "defs");
+    const marker = document.createElementNS(ns, "marker"); marker.id = "actionArrowHead";
+    marker.setAttribute("markerWidth", "10"); marker.setAttribute("markerHeight", "10");
+    marker.setAttribute("refX", "8"); marker.setAttribute("refY", "3"); marker.setAttribute("orient", "auto");
+    const head = document.createElementNS(ns, "path"); head.setAttribute("d", "M0,0 L0,6 L9,3 z"); head.setAttribute("fill", "context-stroke");
+    marker.appendChild(head); defs.appendChild(marker); svg.appendChild(defs);
+  }
+  const path = document.createElementNS(ns, "path");
+  path.setAttribute("d", `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`);
+  path.setAttribute("class", `action-arrow ${tone}`); path.setAttribute("marker-end", "url(#actionArrowHead)");
+  svg.appendChild(path);
+}
+function showActionFocus(msg, replay) {
+  if (!msg) return;
+  if (replay) {
+    const focused = document.querySelectorAll ? document.querySelectorAll(".action-source,.action-target") : [];
+    if (focused.length) return;
+  }
+  clearActionFocus(); state.lastAction = msg;
+  const tone = actionToneClass(msg.tone || "card");
+  const actorNode = seatNode(msg.actor);
+  if (actorNode) actorNode.classList.add("action-source");
+  const targetNames = [];
+  for (const seat of (msg.targets || [])) {
+    const node = seatNode(seat); targetNames.push(nicknameOf(seat));
+    if (!node) continue;
+    node.classList.add("action-target", tone);
+    const badge = document.createElement("span"); badge.className = "action-badge";
+    badge.textContent = tone === "heal" ? `+${msg.amount || 1} 💚` :
+      (["damage","attack","fire","thunder","lose_hp"].includes(tone) && msg.amount ? `-${msg.amount} HP` : "目标");
+    node.appendChild(badge); drawActionArrow(actorNode, node, tone);
+  }
+  const actorName = Number.isInteger(msg.actor) ? nicknameOf(msg.actor) : "环境";
+  const burst = $("actionBurst");
+  if (burst) {
+    burst.style.display = "block"; burst.className = `show ${tone}`;
+    burst.querySelector(".ab-main").textContent = `${tone === "heal" ? "💚" : tone === "skill" ? "✨" : "🎴"} ${msg.label || "动作"}`;
+    burst.querySelector(".ab-route").textContent = `${actorName} → ${targetNames.join("、") || actorName}`;
+    const amountText = Number.isInteger(msg.amount) ? ` · ${tone === "heal" ? "回复" : "数值"} ${msg.amount}` : "";
+    burst.querySelector(".ab-detail").textContent = `${msg.detail || ""}${amountText}`;
+  }
+  if (!replay) setBanner(`${actorName} 对 ${targetNames.join("、") || actorName} · ${msg.label || "动作"}`);
+  if (!replay) actionTimer = setTimeout(clearActionFocus, 2350);
 }
 
 /* ---------------- REST ---------------- */
@@ -828,6 +957,9 @@ function handleMessage(msg) {
     case "turn":
       // 阶段横幅由 state_sync 统一刷；这里只记日志节拍
       break;
+    case "action_focus":
+      showActionFocus(msg, false);
+      break;
     case "card_move":
       // M5c 出牌飞牌：公开的牌移动飞一张到桌面中央
       if (msg.public && msg.cards && msg.cards.length && document.createElement) {
@@ -1006,7 +1138,7 @@ function renderAll() {
   const inGame = snap.phase === "playing" || snap.phase === "finished";
   $("lobbyCard").style.display = (!inGame && state.role) ? "block" : "none";
   $("tableCard").style.display = inGame ? "block" : "none";
-  if (!inGame) { renderLobby(snap); return; }
+  if (!inGame) { clearActionFocus(); state.lastAction = null; renderLobby(snap); return; }
   renderTable(snap);
 }
 
@@ -1076,6 +1208,9 @@ function renderTable(snap) {
         `<span>${escapeHtml(c.name)}</span></span>`;
     }).join("") : "");
   renderMe(snap);
+  if (state.lastAction && !actionTimer && typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => showActionFocus(state.lastAction, true));
+  }
 }
 
 function renderFoe(p, snap, cur, askSeats) {
@@ -1123,6 +1258,7 @@ function renderMe(snap) {
     return;
   }
   const me = game.me;
+  $("meZone").dataset.seat = String(me.seat);
   const mine = (game.players || []).find((p) => p.seat === me.seat) || {};
   const gimg = mine.general ? generalImg(mine.general) : "";
   $("meStrip").innerHTML =
