@@ -95,10 +95,11 @@
   .tag.susu { background: var(--bronze-soft); color: var(--bronze); }
   .tag.host { background: #eee; color: #777; }
 
-  /* ---------- 牌桌 ---------- */
-  #tableCard { display: none; margin-top: 10px; padding: 12px 12px 14px; }
+  /* ---------- 牌桌（无名杀风：深色绒布 + 武将牌 + 卡面手牌） ---------- */
+  #tableCard { display: none; margin-top: 10px; padding: 0; overflow: hidden;
+    background: #221b12; border-color: #4a3a26; }
   .topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
-    gap: 6px; padding-bottom: 8px; border-bottom: 2px dashed var(--rule); margin-bottom: 10px; }
+    gap: 6px; padding: 8px 12px; background: var(--panel); border-bottom: 2px solid var(--rule); }
   .status-pill { display: inline-flex; align-items: center; gap: 7px; background: #fff;
     border: 1.5px solid var(--rule); border-radius: 999px; padding: 6px 14px; font-size: 12.5px; font-weight: 700; }
   .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--seal);
@@ -108,72 +109,131 @@
     border: 1.5px solid var(--bronze); border-radius: 999px; padding: 5px 12px;
     font-size: 11.5px; font-weight: 800; color: var(--bronze); }
 
-  /* 对家座位条：横滚 */
-  .foes { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; }
+  /* 绒布桌面：背景图由 JS 按本地/云端前缀注入 */
+  #tableFelt { padding: 10px 10px 12px; background-color: #221b12;
+    background-size: cover; background-position: center; }
+
+  /* 对家席位：武将牌挂墙一圈 */
+  .foes { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 6px; }
   .foes::-webkit-scrollbar { height: 4px; }
-  .foes::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 99px; }
-  .foe {
-    flex: 0 0 auto; width: 128px; background: #fff; border: 2px solid var(--rule);
-    border-radius: 12px; padding: 8px 9px; font-size: 11.5px; position: relative;
-  }
-  .foe.current { border-color: var(--seal); box-shadow: 0 0 0 2px rgba(179,57,43,.25); }
-  .foe.dead { opacity: .45; filter: grayscale(.8); }
-  .foe .nm { font-weight: 800; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .foe .gen { color: var(--ink-soft); font-size: 11px; }
-  .foe .idn { position: absolute; top: 6px; right: 7px; font-size: 10px; font-weight: 800;
-    background: var(--paper-deep); border-radius: 6px; padding: 1px 5px; color: var(--ink-soft); }
+  .foes::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); border-radius: 99px; }
+  .foe { flex: 0 0 auto; width: 108px; position: relative; border-radius: 10px;
+    background: rgba(253,248,236,.08); border: 2px solid rgba(216,203,170,.35);
+    padding: 5px; color: #f0e7d2; transition: box-shadow .2s, border-color .2s; }
+  .foe.current { border-color: var(--gold);
+    box-shadow: 0 0 0 2px rgba(185,138,47,.55), 0 0 18px rgba(185,138,47,.45); }
+  .foe.dead { opacity: .45; filter: grayscale(.9); }
+  .foe .portrait { position: relative; height: 96px; border-radius: 7px; overflow: hidden;
+    background: #171208 center/cover; border: 1px solid rgba(216,203,170,.4); }
+  .foe .portrait.nogen { display: flex; align-items: center; justify-content: center;
+    color: rgba(240,231,210,.5); font-size: 11px; }
+  .foe .idn { position: absolute; top: 3px; left: 3px; font-size: 10px; font-weight: 800;
+    background: rgba(23,18,8,.85); border-radius: 5px; padding: 1px 5px; color: #d8cbaa; }
   .foe .idn.lord { background: var(--gold); color: #fff; }
-  .foe .idn.shown { background: var(--seal-soft); color: var(--seal-deep); }
-  .foe .hp { margin-top: 3px; letter-spacing: 1px; font-size: 11px; }
-  .foe .rows { margin-top: 3px; color: var(--ink-soft); line-height: 1.5; min-height: 30px; }
-  .foe .askmark { position: absolute; bottom: 6px; right: 7px; font-size: 13px; animation: pulse 1.2s infinite; }
+  .foe .idn.shown { background: var(--seal); color: #fff; }
+  .foe .askmark { position: absolute; top: 3px; right: 4px; font-size: 13px;
+    animation: pulse 1.2s infinite; text-shadow: 0 0 6px #000; }
+  .foe .fname { font-weight: 800; font-size: 11.5px; margin-top: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .foe .fname .fsusu { color: #8fd0ba; }
+  .foe .fhp { font-size: 10px; letter-spacing: 1px; margin-top: 1px; }
+  .foe .fmeta { display: flex; align-items: center; gap: 4px; margin-top: 3px;
+    font-size: 10px; color: rgba(240,231,210,.85); flex-wrap: wrap; min-height: 26px; }
+  .foe.face-down .portrait { filter: grayscale(.8) brightness(.6); }
+  .foe .handbacks { display: inline-flex; align-items: center; }
+  .foe .handbacks img { width: 14px; height: 20px; border-radius: 2px; margin-left: -8px;
+    border: 1px solid rgba(0,0,0,.5); box-shadow: 0 1px 3px rgba(0,0,0,.5); }
+  .foe .handbacks img:first-child { margin-left: 0; }
+  .foe .chip { background: rgba(23,18,8,.8); border: 1px solid rgba(216,203,170,.4);
+    border-radius: 4px; padding: 0 4px; font-size: 9.5px; }
 
-  /* 中央结算区 */
-  .center { background: var(--paper-deep); border: 2px solid var(--rule); border-radius: 12px;
-    padding: 8px 12px; margin: 6px 0 8px; }
-  .center .banner { font-size: 13px; font-weight: 700; min-height: 20px; }
-  .center .discard-row { display: flex; align-items: center; gap: 6px; margin-top: 5px;
-    font-size: 11.5px; color: var(--ink-soft); flex-wrap: wrap; }
+  /* 中央结算区：牌堆/弃牌堆立在绒布上 */
+  .center { display: flex; align-items: center; gap: 12px; margin: 4px 0 8px;
+    background: rgba(23,18,8,.55); border: 1.5px solid rgba(216,203,170,.3);
+    border-radius: 12px; padding: 8px 12px; }
+  .center .banner { flex: 1; font-size: 13px; font-weight: 700; color: #f0e7d2; min-height: 20px; }
+  .pile { position: relative; width: 44px; text-align: center; color: #d8cbaa; font-size: 10px; }
+  .pile img { width: 40px; height: 56px; border-radius: 4px; border: 1px solid rgba(0,0,0,.6);
+    box-shadow: 2px 2px 0 rgba(0,0,0,.4), 4px 4px 0 rgba(0,0,0,.25); }
+  .pile .cnt { position: absolute; right: -4px; top: -6px; background: var(--seal); color: #fff;
+    border-radius: 999px; font-size: 10px; font-weight: 800; padding: 0 6px; }
+  .center .discard-row { flex: 0 1 auto; display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: rgba(240,231,210,.8); flex-wrap: wrap; }
+  .mini-card { display: inline-flex; flex-direction: column; align-items: center;
+    width: 30px; border-radius: 4px; background: #fdf8ec; border: 1px solid #999;
+    font-size: 8.5px; font-weight: 800; line-height: 1.1; padding: 1px 0; }
+  .mini-card .mc-corner { font-size: 8px; }
 
-  /* 日志 + 聊天 */
-  .feed { height: 120px; overflow-y: auto; background: #fff; border: 1.5px solid var(--rule);
+  /* 日志 + 聊天（压暗半透，融进桌面） */
+  .feed { height: 110px; overflow-y: auto; background: rgba(23,18,8,.6);
+    border: 1.5px solid rgba(216,203,170,.3); color: #e8dfc8;
     border-radius: 10px; padding: 8px 10px; font-size: 12px; line-height: 1.65; margin-bottom: 8px; }
   .feed::-webkit-scrollbar { width: 4px; }
-  .feed::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 99px; }
-  .feed .chatline .who { font-weight: 800; color: var(--bronze); }
-  .feed .sysline { color: #998a6d; font-style: italic; font-size: 11.5px; }
+  .feed::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); border-radius: 99px; }
+  .feed .chatline .who { font-weight: 800; color: #8fd0ba; }
+  .feed .sysline { color: rgba(232,223,200,.55); font-style: italic; font-size: 11.5px; }
   #chatRow { display: flex; gap: 6px; margin-bottom: 8px; }
-  #chatInput { flex: 1; border: 2px solid var(--rule); border-radius: 999px; padding: 8px 14px;
-    font-size: 13px; outline: none; font-family: inherit; background: #fff; }
-  #chatInput:focus { border-color: var(--seal); }
+  #chatInput { flex: 1; border: 2px solid rgba(216,203,170,.4); border-radius: 999px; padding: 8px 14px;
+    font-size: 13px; outline: none; font-family: inherit; background: rgba(253,248,236,.92); }
+  #chatInput:focus { border-color: var(--gold); }
 
-  /* 我的区 */
-  .me-strip { display: flex; align-items: center; justify-content: space-between; gap: 8px;
-    flex-wrap: wrap; margin-bottom: 6px; font-size: 12.5px; }
-  .me-id { font-weight: 800; background: var(--seal-soft); color: var(--seal-deep);
+  /* 我的区：武将牌立绘 + 身份 + 血条 + 装备槽 + 手牌卡面 */
+  .me-zone { background: rgba(23,18,8,.55); border: 1.5px solid rgba(216,203,170,.3);
+    border-radius: 12px; padding: 8px 10px; }
+  .me-strip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-bottom: 6px; font-size: 12.5px; color: #f0e7d2; }
+  .me-portrait { width: 46px; height: 62px; border-radius: 6px; background: #171208 center/cover;
+    border: 2px solid var(--gold); flex: 0 0 auto; }
+  .me-id { font-weight: 800; background: var(--seal); color: #fff;
     border-radius: 8px; padding: 2px 9px; }
   .me-strip .hp { letter-spacing: 1px; }
-  .hand { display: flex; gap: 7px; overflow-x: auto; padding: 6px 2px 10px; min-height: 92px; }
+  .equip-row { display: flex; gap: 6px; flex-wrap: wrap; font-size: 11px;
+    color: rgba(240,231,210,.85); margin-bottom: 6px; min-height: 16px; }
+  .equip-chip { background: rgba(23,18,8,.8); border: 1px solid rgba(216,203,170,.45);
+    color: #e8dfc8; border-radius: 999px; padding: 1px 8px; font-weight: 700; }
+
+  /* 手牌：真卡面（边框 + 花色点数角标 + 画芯 + 牌名底条） */
+  .hand { display: flex; gap: 6px; overflow-x: auto; padding: 8px 2px 10px; min-height: 116px; }
   .hand::-webkit-scrollbar { height: 4px; }
-  .hand::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 99px; }
-  .pcard {
-    flex: 0 0 auto; width: 62px; height: 84px; background: #fff; border: 2px solid var(--rule);
-    border-radius: 9px; padding: 5px 6px; cursor: pointer; position: relative;
-    transition: transform .12s, border-color .12s, box-shadow .12s; font-size: 12px;
-  }
-  .pcard .corner { font-size: 11px; font-weight: 800; }
-  .pcard .cname { position: absolute; left: 6px; right: 6px; bottom: 6px; font-weight: 800;
-    font-size: 12.5px; line-height: 1.15; }
+  .hand::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); border-radius: 99px; }
+  .pcard { flex: 0 0 auto; width: 74px; height: 102px; background: #fdf8ec;
+    border: 2px solid #8a7a5c; border-radius: 7px; cursor: pointer; position: relative;
+    transition: transform .12s, border-color .12s, box-shadow .12s;
+    box-shadow: 0 2px 6px rgba(0,0,0,.45); overflow: hidden; }
+  .pcard .corner { position: absolute; top: 2px; left: 4px; z-index: 2; font-size: 11px;
+    font-weight: 800; line-height: 1.1; text-align: center;
+    text-shadow: 0 0 3px #fdf8ec, 0 0 3px #fdf8ec; }
+  .pcard .art { position: absolute; inset: 0; background: #e8dfc8 center/cover; opacity: .92; }
+  .pcard .cname { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+    background: rgba(253,248,236,.92); font-weight: 800; font-size: 12px; line-height: 1.2;
+    text-align: center; padding: 1px 0; }
   .pcard.red .corner, .pcard.red .cname { color: var(--red-suit); }
   .pcard.black .corner, .pcard.black .cname { color: var(--black-suit); }
-  .pcard.usable { border-color: var(--bronze); }
-  .pcard.picked { transform: translateY(-8px); border-color: var(--seal);
-    box-shadow: 0 8px 18px rgba(179, 57, 43, .3); }
-  .pcard.disabled { opacity: .45; cursor: default; }
-  .equip-row { display: flex; gap: 6px; flex-wrap: wrap; font-size: 11px; color: var(--ink-soft);
-    margin-bottom: 6px; min-height: 16px; }
-  .equip-chip { background: var(--bronze-soft); border: 1px solid var(--bronze);
-    color: var(--bronze); border-radius: 999px; padding: 1px 8px; font-weight: 700; }
+  .pcard.usable { border-color: #6fbf8f; box-shadow: 0 0 0 2px rgba(111,191,143,.55),
+    0 0 14px rgba(111,191,143,.5); }
+  .pcard.picked { transform: translateY(-10px); border-color: var(--seal);
+    box-shadow: 0 10px 18px rgba(0,0,0,.5), 0 0 0 2px var(--seal); }
+  .pcard.disabled { opacity: .5; cursor: default; filter: grayscale(.55); }
+  /* 属性杀着色：火杀火红、雷杀雷紫 */
+  .pcard.attr-fire .cname { color: #c22410; }
+  .pcard.attr-fire { border-color: #d4553a; box-shadow: 0 0 10px rgba(224,88,44,.55); }
+  .pcard.attr-thunder .cname { color: #6b3fb5; }
+  .pcard.attr-thunder { border-color: #8a5fd0; box-shadow: 0 0 10px rgba(138,95,208,.55); }
+  .pcard.attr-fire.usable { box-shadow: 0 0 0 2px rgba(111,191,143,.55), 0 0 14px rgba(224,88,44,.7); }
+  .pcard.attr-thunder.usable { box-shadow: 0 0 0 2px rgba(111,191,143,.55), 0 0 14px rgba(138,95,208,.7); }
+  /* 铁索横置 */
+  .foe.chained { border-color: #8a8f98; }
+  .foe .chainmark { position: absolute; top: 3px; right: 4px; font-size: 13px;
+    text-shadow: 0 0 6px #000; }
+
+  /* 手机竖屏：压一档尺寸 */
+  @media (max-width: 640px) {
+    .foe { width: 92px; }
+    .foe .portrait { height: 78px; }
+    .pcard { width: 62px; height: 88px; }
+    .hand { min-height: 102px; }
+    .feed { height: 84px; }
+  }
 
   /* 询问面板：底部浮层 */
   #askSheet {
@@ -186,6 +246,28 @@
   #askPrompt .cd { color: var(--seal); font-variant-numeric: tabular-nums; }
   #askOptions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .opt-note { font-size: 11.5px; color: var(--ink-soft); width: 100%; }
+
+  /* 立绘选将 */
+  .general-picks { display: flex; gap: 10px; flex-wrap: wrap; }
+  .general-pick { display: flex; flex-direction: column; align-items: center; gap: 4px;
+    background: none; border: none; cursor: pointer; font-family: inherit; padding: 0; }
+  .general-pick .gp-portrait { width: 84px; height: 112px; border-radius: 8px;
+    background: #221b12 center/cover; border: 2px solid var(--rule);
+    transition: transform .12s, border-color .12s, box-shadow .12s; }
+  .general-pick:hover .gp-portrait { transform: translateY(-4px); border-color: var(--seal);
+    box-shadow: 0 8px 18px rgba(179,57,43,.35); }
+  .general-pick .gp-name { font-size: 13px; font-weight: 800; color: var(--ink); }
+
+  /* 卡牌/武将悬浮说明书 */
+  #cardTip { display: none; position: fixed; left: 50%; bottom: 168px; transform: translateX(-50%);
+    z-index: 90; max-width: 340px; background: rgba(23,18,8,.96); border: 2px solid var(--gold);
+    border-radius: 12px; padding: 10px 12px; gap: 10px; align-items: flex-start;
+    box-shadow: 0 12px 32px rgba(0,0,0,.6); pointer-events: none; }
+  #cardTip .tip-art { width: 64px; height: 64px; border-radius: 8px; flex: 0 0 auto;
+    background: #171208 center/cover; border: 1px solid rgba(216,203,170,.5); }
+  #cardTip .tip-title { color: var(--gold); font-weight: 800; font-size: 14px; margin-bottom: 4px; }
+  #cardTip .tip-title span { color: #e8dfc8; margin-right: 6px; }
+  #cardTip .tip-text { color: #f0e7d2; font-size: 12px; line-height: 1.6; }
 
   /* 终局 */
   #overlay { display: none; position: fixed; inset: 0; background: rgba(44, 38, 29, .55);
@@ -203,6 +285,28 @@
 
   .actions-row { display: flex; gap: 6px; flex-wrap: wrap; }
   body.spectating #chatRow { display: none; }
+
+  /* ---------- M5c 动效：出牌飞牌 / 受击震动 ---------- */
+  .flycard { position: fixed; width: 66px; height: 92px; border-radius: 8px; z-index: 120;
+    background: #fdf8ec center/cover; border: 2px solid #8a7a5c; pointer-events: none;
+    left: 50%; bottom: 150px; transform: translateX(-50%);
+    animation: flyUp .9s ease-out forwards; box-shadow: 0 8px 20px rgba(0,0,0,.55); }
+  .flycard .fly-corner { position: absolute; top: 3px; left: 5px; font-size: 11px;
+    font-weight: 800; text-shadow: 0 0 3px #fdf8ec, 0 0 3px #fdf8ec; }
+  .flycard .fly-name { position: absolute; left: 0; right: 0; bottom: 0; text-align: center;
+    background: rgba(253,248,236,.92); font-size: 12px; font-weight: 800; padding: 1px 0; }
+  @keyframes flyUp {
+    0% { opacity: 0; transform: translateX(-50%) translateY(60px) scale(.6) rotate(-8deg); }
+    25% { opacity: 1; }
+    70% { opacity: 1; transform: translateX(-50%) translateY(-170px) scale(1.08) rotate(2deg); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-230px) scale(1); }
+  }
+  .foe.shake { animation: foeShake .45s; }
+  @keyframes foeShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); } 40% { transform: translateX(5px); }
+    60% { transform: translateX(-4px); } 80% { transform: translateX(3px); }
+  }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -270,20 +374,25 @@ window.SGS_CLOUD = {
         <button class="btn ghost small" id="leaveBtn">🚪 离座</button>
       </div>
     </div>
-    <div class="foes" id="foes"></div>
-    <div class="center">
-      <div class="banner" id="banner">🏮 等待开局…</div>
-      <div class="discard-row" id="discardRow"></div>
+    <div id="tableFelt">
+      <div class="foes" id="foes"></div>
+      <div class="center">
+        <div class="pile"><img id="deckImg" alt="牌堆"><span class="cnt" id="deckCount">0</span><div>牌堆</div></div>
+        <div class="banner" id="banner">🏮 等待开局…</div>
+        <div class="discard-row" id="discardRow"></div>
+      </div>
+      <div class="feed" id="feed"></div>
+      <div id="chatRow">
+        <input type="text" id="chatInput" placeholder="桌上聊两句…" maxlength="200"
+               onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="btn small" onclick="sendChat()">发送</button>
+      </div>
+      <div class="me-zone">
+        <div class="me-strip" id="meStrip"></div>
+        <div class="equip-row" id="meEquips"></div>
+        <div class="hand" id="hand"></div>
+      </div>
     </div>
-    <div class="feed" id="feed"></div>
-    <div id="chatRow">
-      <input type="text" id="chatInput" placeholder="桌上聊两句…" maxlength="200"
-             onkeydown="if(event.key==='Enter')sendChat()">
-      <button class="btn small" onclick="sendChat()">发送</button>
-    </div>
-    <div class="me-strip" id="meStrip"></div>
-    <div class="equip-row" id="meEquips"></div>
-    <div class="hand" id="hand"></div>
   </div>
 </div>
 
@@ -302,6 +411,9 @@ window.SGS_CLOUD = {
   <button class="btn ghost" onclick="$('overlay').style.display='none'">看看牌桌</button>
 </div></div>
 
+<!-- 卡牌/武将悬浮说明书 -->
+<div id="cardTip"></div>
+
 <div id="toast"></div>
 <script>
 /* ============================================================
@@ -313,6 +425,125 @@ const $ = (id) => document.getElementById(id);
 const SUIT_CHAR = { spade: "♠", heart: "♥", club: "♣", diamond: "♦" };
 const SUIT_RED = { spade: false, club: false, heart: true, diamond: true };
 const RANK_CHAR = { 1: "A", 11: "J", 12: "Q", 13: "K" };
+/* ---------------- 素材（无名杀美术，deploy/sgs_pages/fetch_assets.py 拉取） ----------------
+   本地走 /sgs_assets（app.py 挂了路由），云端 Pages 走同目录相对路径。 */
+const ASSETS = window.SGS_CLOUD ? "sgs_assets" : "/sgs_assets";
+const CARD_ART = {
+  "杀": "sha", "闪": "shan", "桃": "tao",
+  "万箭齐发": "wanjian", "南蛮入侵": "nanman", "桃园结义": "taoyuan", "五谷丰登": "wugu",
+  "决斗": "juedou", "借刀杀人": "jiedao", "无中生有": "wuzhong", "无懈可击": "wuxie",
+  "过河拆桥": "guohe", "顺手牵羊": "shunshou", "乐不思蜀": "lebu", "闪电": "shandian",
+  "丈八蛇矛": "zhangba", "诸葛连弩": "zhuge", "寒冰剑": "hanbing", "雌雄双股剑": "cixiong",
+  "青釭剑": "qinggang", "青龙偃月刀": "qinglong", "贯石斧": "guanshi", "方天画戟": "fangtian",
+  "麒麟弓": "qilin", "仁王盾": "renwang", "八卦阵": "bagua",
+  "大宛": "dawan", "的卢": "dilu", "绝影": "jueying", "爪黄飞电": "zhuahuang",
+  "紫骍": "zixing", "赤兔": "chitu",
+  /* M5 军争篇 */
+  "火杀": "huosha", "雷杀": "leisha", "酒": "jiu", "火攻": "huogong",
+  "铁索连环": "tiesuo", "兵粮寸断": "bingliang", "藤甲": "tengjia",
+  "白银狮子": "baiyin", "古锭刀": "guding", "朱雀羽扇": "zhuque", "骅骝": "hualiu",
+};
+const GENERAL_IMG = {
+  "刘备": "liubei", "关羽": "guanyu", "张飞": "zhangfei", "赵云": "zhaoyun",
+  "马超": "machao", "曹操": "caocao", "司马懿": "simayi", "夏侯惇": "xiahoudun",
+  "甄姬": "zhenji", "孙权": "sunquan", "甘宁": "ganning", "吕布": "lvbu",
+  /* M5b 风包八将 */
+  "曹仁": "caoren", "夏侯渊": "xiahouyuan", "黄忠": "huangzhong", "魏延": "weiyan",
+  "小乔": "xiaoqiao", "周泰": "zhoutai", "张角": "zhangjiao", "于吉": "yuji",
+};
+function cardArt(name) { const k = CARD_ART[name]; return k ? `${ASSETS}/cards/${k}.png` : ""; }
+function generalImg(name) { const k = GENERAL_IMG[name]; return k ? `${ASSETS}/characters/${k}.jpg` : ""; }
+
+/* ---------------- 卡牌/武将说明书（悬浮预览） ---------------- */
+const CARD_HELP = {
+  "杀": "出牌阶段限一次。指定攻击范围内的一名角色，对其造成 1 点伤害。",
+  "闪": "当你成为【杀】的目标时使用，抵消这张【杀】。",
+  "桃": "出牌阶段对自己使用，回复 1 点体力；或有角色濒死时对其使用，将其救回。",
+  "决斗": "出牌阶段对一名其他角色使用：双方轮流打出【杀】，先打不出的一方受到 1 点伤害。",
+  "南蛮入侵": "出牌阶段对所有其他角色使用：他们须打出【杀】，否则受到 1 点伤害。",
+  "万箭齐发": "出牌阶段对所有其他角色使用：他们须打出【闪】，否则受到 1 点伤害。",
+  "桃园结义": "出牌阶段对所有角色使用：每人回复 1 点体力。",
+  "五谷丰登": "亮出牌堆顶等于人数的张牌，从你开始每人挑一张收入手牌。",
+  "无中生有": "出牌阶段对自己使用：摸两张牌。",
+  "无懈可击": "一张锦囊生效前使用，抵消它的效果。可以无懈别人的无懈。",
+  "过河拆桥": "出牌阶段对一名有牌的角色使用：弃掉他的一张牌（手牌随机、装备判定区明示）。",
+  "顺手牵羊": "出牌阶段对距离 1 以内的一名角色使用：把他的一张牌拿到自己手里。",
+  "借刀杀人": "对一名装备武器的角色使用：令他对另一名角色出【杀】，不出就把武器交给你。",
+  "乐不思蜀": "延时锦囊，放进别人判定区。判定：不是♥红桃，就跳过他的出牌阶段。",
+  "闪电": "延时锦囊，挂自己判定区。判定♠黑桃 2-9：吃 3 点雷电伤害；否则传给下家。",
+  "诸葛连弩": "武器。出牌阶段你可以出任意张【杀】。",
+  "青釭剑": "武器。你的【杀】无视目标防具。",
+  "雌雄双股剑": "武器。对异性出【杀】时可令其选择：弃一张牌，或让你摸一张。",
+  "寒冰剑": "武器。【杀】命中时可改为弃掉对方两张牌而不造成伤害。",
+  "青龙偃月刀": "武器。【杀】被【闪】抵消后，你可以立刻再出一张【杀】追杀。",
+  "丈八蛇矛": "武器。你可以把两张手牌当【杀】打出。",
+  "贯石斧": "武器。【杀】被【闪】抵消时，你可以弃两张牌强制命中。",
+  "方天画戟": "武器。用最后一张手牌当【杀】时，可以指定至多 3 个目标。",
+  "麒麟弓": "武器。【杀】命中时可以弃掉对方的一匹马。",
+  "八卦阵": "防具。需要使用【闪】时可以先判定：红色视为你打出了【闪】。",
+  "仁王盾": "防具。黑色的【杀】对你无效。",
+  "赤兔": "进攻马（-1）。你计算与其他角色的距离 -1。",
+  "的卢": "防御马（+1）。其他角色计算与你的距离 +1。",
+  "绝影": "防御马（+1）。其他角色计算与你的距离 +1。",
+  "爪黄飞电": "防御马（+1）。其他角色计算与你的距离 +1。",
+  "大宛": "防御马（+1）。其他角色计算与你的距离 +1。",
+  "紫骍": "防御马（+1）。其他角色计算与你的距离 +1。",
+  /* M5 军争篇 */
+  "火杀": "火焰【杀】。同【杀】，但造成火属性伤害——会点燃横置（铁索连环）的角色并传导。",
+  "雷杀": "雷电【杀】。同【杀】，但造成雷属性伤害——命中横置的角色会沿铁索传导。",
+  "酒": "出牌阶段对自己喝：本回合你下一张【杀】伤害 +1（每回合限一杯）。你濒死时也可以用，回复 1 点体力。",
+  "火攻": "对一名有手牌的角色使用：他展示一张手牌，你可以弃一张同花色手牌，对他造成 1 点火属性伤害。",
+  "铁索连环": "选一至两名角色：横置（上链）或重置（解链）。横置的角色受到属性伤害时，伤害沿铁索传导给所有横置者。也可以直接弃掉这张牌，摸一张（重铸）。",
+  "兵粮寸断": "延时锦囊，放进别人判定区。判定：不是♣梅花，就跳过他的摸牌阶段。",
+  "藤甲": "防具。无属性的【杀】对你无效；但你受到的火属性伤害 +1（怕火）。",
+  "白银狮子": "防具。你单次受到的伤害最多承受 1 点；失去它时回复 1 点体力。",
+  "古锭刀": "武器（射程2）。你的【杀】对没有手牌的目标伤害 +1。",
+  "朱雀羽扇": "武器（射程4）。你出无属性【杀】时，可以把它变成火【杀】。",
+  "骅骝": "防御马（+1）。其他角色计算与你的距离 +1。",
+};
+const GENERAL_HELP = {
+  "刘备": "仁德：出牌阶段，你可以把手牌交给其他角色；每回合首次给出两张以上，回复 1 点体力。",
+  "关羽": "武圣：你的红色手牌可以当【杀】使用。",
+  "张飞": "咆哮：出牌阶段你出【杀】没有次数限制。",
+  "赵云": "龙胆：【杀】可以当【闪】、【闪】可以当【杀】使用。",
+  "马超": "马术：别人算与你的距离始终 +1（天生带-1进攻马效果反过来）。铁骑：出杀指定目标后判定，红色则这刀不可被闪避。",
+  "曹操": "奸雄：你受到伤害后，把造成这张伤害的牌收入手牌。",
+  "司马懿": "反馈：受伤后获得伤害来源的一张牌。鬼才：判定牌亮出后，你可以用一张手牌替换它。",
+  "夏侯惇": "刚烈：你受到伤害后判定——不是♥红桃，伤害来源弃两张牌或再吃 1 点伤害。",
+  "甄姬": "倾国：你的黑色手牌可以当【闪】。洛神：回合开始可判定，黑色则收入手牌并可继续判定。",
+  "孙权": "制衡：出牌阶段限一次，弃任意张牌，摸等量的牌。",
+  "甘宁": "奇袭：你的黑色牌可以当【过河拆桥】使用。",
+  "吕布": "无双：你的【杀】需要两张【闪】才能抵消；决斗中对方需要打出两张【杀】。",
+  /* M5b 风包八将 */
+  "曹仁": "据守：回合结束阶段，你可以摸三张牌，然后跳过你下一个回合（休整蓄力）。",
+  "夏侯渊": "神速：你可以跳过判定和摸牌阶段，视为使用一张无距离限制的【杀】；也可以跳过出牌阶段并弃一张装备牌，再视为使用一张【杀】。",
+  "黄忠": "烈弓：出牌阶段，若目标手牌数不小于你的体力值或不大于你的攻击范围，你的【杀】不可被闪避。",
+  "魏延": "狂骨：锁定技，你对距离 1 以内的角色造成伤害后，回复 1 点体力。",
+  "小乔": "天香：你受到伤害时，可以弃一张♥红桃手牌，把伤害转移给另一名角色并令其摸等同于其已损失体力值的牌。红颜：锁定技，你的♠黑桃牌视为♥红桃。",
+  "周泰": "不屈：你濒死时，亮出牌堆顶一张牌放在武将上——点数与已有不屈牌不重复就回复到 1 点体力；重复才真死。",
+  "张角": "雷击：你使用或打出【闪】后，可令一名角色判定——♠黑桃则他受 2 点雷属性伤害。鬼道：判定牌生效前，你可以用一张黑色牌替换之。",
+  "于吉": "蛊惑：你可以把一张手牌扣置声明成任意基本牌或普通锦囊使用或打出，其他角色可以质疑——质疑错了质疑者受罚，质疑对了牌作废。",
+};
+/* 悬浮说明书：桌面悬停 / 手机长按，同一个面板 */
+let tipTimer = null;
+function showCardTip(anchor, title, corner, artUrl, text) {
+  const tip = $("cardTip");
+  tip.innerHTML =
+    (artUrl ? `<div class="tip-art" style="background-image:url('${artUrl}')"></div>` : "") +
+    `<div class="tip-body"><div class="tip-title">${corner ? `<span>${corner}</span>` : ""}${escapeHtml(title)}</div>` +
+    `<div class="tip-text">${escapeHtml(text)}</div></div>`;
+  tip.style.display = "flex";
+}
+function hideCardTip() { $("cardTip").style.display = "none"; }
+function bindTip(el, title, corner, artUrl, text) {
+  el.addEventListener("mouseenter", () => showCardTip(el, title, corner, artUrl, text));
+  el.addEventListener("mouseleave", hideCardTip);
+  el.addEventListener("touchstart", () => {
+    tipTimer = setTimeout(() => showCardTip(el, title, corner, artUrl, text), 350);
+  }, { passive: true });
+  el.addEventListener("touchend", () => { clearTimeout(tipTimer); setTimeout(hideCardTip, 1400); });
+  el.addEventListener("touchmove", () => clearTimeout(tipTimer), { passive: true });
+}
 const PHASE_NAMES = { prepare: "准备", judge: "判定", draw: "摸牌", play: "出牌",
                       discard: "弃牌", end: "结束" };
 const IDENTITY_ICON = { "主公": "👑", "忠臣": "🛡️", "反贼": "⚔️", "内奸": "🎭", "?": "❔" };
@@ -471,7 +702,7 @@ async function cloudApi(path, body) {
   if (path === "answer") return cloudPost("answer", { ask_id: body.ask_id, choice: body.choice });
   if (path === "chat") return cloudPost("chat", { text: body.text });
   if (path === "action") return cloudPost("action", { action: body.action });
-  if (path === "susu/join") throw new Error("云端暂不能请苏苏——让本地玩家点「请苏苏入座」");
+  if (path === "susu/join") return cloudPost("susu_join", {});  // M3.1 增补
   throw new Error("云端不认识的接口: " + path);
 }
 
@@ -558,12 +789,37 @@ function handleMessage(msg) {
     case "log":
       addFeed(`${msg.icon || "🎴"} ${msg.text}`, "sysline");
       setBanner(msg.text);
+      // M5c 命中反馈：杀伐/伤害日志震一下当事席位（纯视觉，事实仍以 state_sync 为准）
+      if (msg.refs && msg.refs.seats && ["⚔️", "🩸", "💥", "🔥", "⚡", "🏹"].includes(msg.icon)
+          && document.querySelector) {
+        for (const s of msg.refs.seats) {
+          const el = document.querySelector(`.foe[data-seat="${s}"]`);
+          if (el && el.classList) {
+            el.classList.remove("shake");
+            void el.offsetWidth;   // 重置动画
+            el.classList.add("shake");
+          }
+        }
+      }
       break;
     case "turn":
       // 阶段横幅由 state_sync 统一刷；这里只记日志节拍
       break;
     case "card_move":
-      break; // v1 不做位移动画；state_sync 已是事实源
+      // M5c 出牌飞牌：公开的牌移动飞一张到桌面中央
+      if (msg.public && msg.cards && msg.cards.length && document.createElement) {
+        const c = msg.cards[msg.cards.length - 1];
+        const fly = document.createElement("div");
+        fly.className = "flycard";
+        const art = cardArt(c.name);
+        if (art) fly.style.backgroundImage = `url('${art}')`;
+        const red = SUIT_RED[c.suit];
+        fly.innerHTML = `<div class="fly-corner" style="color:${red ? "var(--red-suit)" : "var(--black-suit)"}">${SUIT_CHAR[c.suit]}${rankText(c.rank)}</div>` +
+          `<div class="fly-name" style="color:${red ? "var(--red-suit)" : "var(--black-suit)"}">${escapeHtml(c.name)}</div>`;
+        (document.body || $("tableCard")).appendChild(fly);
+        setTimeout(() => { if (fly.parentNode) fly.parentNode.removeChild(fly); }, 1000);
+      }
+      break;
     case "chat":
       addFeed(`<span class="who">${escapeHtml(msg.nickname)}:</span> ${escapeHtml(msg.text)}`, "chatline", true);
       break;
@@ -571,7 +827,11 @@ function handleMessage(msg) {
       addFeed(`🏮 ${escapeHtml(msg.message)}`, "sysline", true);
       break;
     case "seats":
-      if (state.snapshot) { state.snapshot.seats = msg.seats; renderAll(); }
+      if (state.snapshot) {
+        state.snapshot.seats = msg.seats;
+        state.snapshot.seat_count = msg.seats.length;  // 计数与名单同源，别让开局按钮读旧账
+        renderAll();
+      }
       break;
     case "spectators":
       $("specCount").textContent = String(msg.count ?? 0);
@@ -734,12 +994,20 @@ function renderLobby(snap) {
   const meOwner = (snap.seats || []).some((s) => s.seat === state.seat && s.is_owner);
   $("startBtn").style.display = (meOwner && (snap.seat_count || 0) >= 2) ? "" : "none";
   $("inviteSusuBtn").style.display =
-    (state.role === "seat" && !CLOUD && !(snap.seats || []).some((s) => s.login === "susu")) ? "" : "none";
+    (state.role === "seat" && !(snap.seats || []).some((s) => s.login === "susu")) ? "" : "none";
 }
 
 function renderTable(snap) {
   const game = snap.game;
   if (!game) return;
+  // 绒布背景与牌堆图（幂等注入，云端/本地前缀不同）
+  const felt = $("tableFelt");
+  if (!felt.dataset.bgReady) {
+    felt.dataset.bgReady = "1";
+    felt.style.backgroundImage =
+      `linear-gradient(rgba(26,20,12,.78), rgba(26,20,12,.86)), url("${ASSETS}/misc/table_bg.jpg")`;
+    $("deckImg").src = `${ASSETS}/misc/cardback.png`;
+  }
   const cur = game.current_seat;
   const phaseName = PHASE_NAMES[game.phase] || game.phase || "";
   if (game.game_over && game.result) {
@@ -747,6 +1015,11 @@ function renderTable(snap) {
   } else {
     $("statusText").textContent =
       `第 ${snap.game_no} 局 · 第 ${game.round} 轮 · ${nicknameOf(cur)} 的${phaseName}阶段`;
+    // 横幅兜底：刷新重连后 turn 事件早过去了，别让人对着「等待开局」发愣
+    const bn = $("banner");
+    if (!bn.textContent || bn.textContent.includes("等待开局")) {
+      bn.textContent = `⚔️ 轮到 ${nicknameOf(cur)} 的${phaseName}阶段`;
+    }
   }
   // 对家条（观战 = 全员条）
   const foes = $("foes");
@@ -756,32 +1029,55 @@ function renderTable(snap) {
     if (state.role === "seat" && p.seat === state.seat) continue;
     foes.appendChild(renderFoe(p, snap, cur, askSeats));
   }
-  // 弃牌堆
+  // 牌堆计数
+  $("deckCount").textContent = String(game.deck_count ?? 0);
+  // 弃牌堆：最近四张摆迷你卡面
   const dr = $("discardRow");
   const recent = (game.discard || []).slice(-4).reverse();
-  dr.innerHTML = `<b>弃牌 ${game.discard_count}</b> · 牌堆 ${game.deck_count}` +
-    (recent.length ? " ｜ 最近：" + recent.map((c) =>
-      `<span style="color:${SUIT_RED[c.suit] ? "var(--red-suit)" : "var(--black-suit)"}">${cardLabel(c)}</span>`
-    ).join("、") : "");
+  dr.innerHTML = `<span>弃牌 ${game.discard_count}</span>` +
+    (recent.length ? recent.map((c) => {
+      const red = SUIT_RED[c.suit];
+      return `<span class="mini-card" style="color:${red ? "var(--red-suit)" : "var(--black-suit)"}">` +
+        `<span class="mc-corner">${SUIT_CHAR[c.suit]}${rankText(c.rank)}</span>` +
+        `<span>${escapeHtml(c.name)}</span></span>`;
+    }).join("") : "");
   renderMe(snap);
 }
 
 function renderFoe(p, snap, cur, askSeats) {
   const div = document.createElement("div");
-  div.className = "foe" + (p.seat === cur ? " current" : "") + (p.alive ? "" : " dead");
-  const idName = p.identity_name || "?";
-  const idCls = idName === "主公" ? "lord" : (p.identity_revealed ? "shown" : "");
+  div.className = "foe" + (p.seat === cur ? " current" : "") + (p.alive ? "" : " dead") +
+    (p.chained ? " chained" : "") + (p.face_down ? " face-down" : "");
+  div.dataset.seat = p.seat;   // M5c 受击震动按座位找人
+  const revealed = p.identity_revealed || (p.identity_name && p.identity_name !== "?");
+  const idName = revealed ? p.identity_name : "暗";
+  const idCls = idName === "主公" ? "lord" : (revealed ? "shown" : "");
+  const gimg = p.general ? generalImg(p.general) : "";
   const equips = Object.values(p.equips || {}).filter(Boolean).map((c) => c.name);
   const judge = (p.judge_zone || []).map((c) => c.name === "闪电" ? "⚡" : "🔒" + c.name);
+  const backs = Math.min(p.hand_count || 0, 6);   // 卡背最多摆 6 张，免得撑破
+  const seatInfo = (snap.seats || []).find((s) => s.seat === p.seat) || {};
   div.innerHTML =
-    `<div class="idn ${idCls}">${IDENTITY_ICON[idName] || "❔"}${idName}</div>` +
-    `<div class="nm">${escapeHtml(nicknameOf(p.seat))}</div>` +
-    `<div class="gen">${escapeHtml(p.general || "未选将")}</div>` +
-    `<div class="hp">${"❤️".repeat(Math.max(p.hp, 0))}${"🖤".repeat(Math.max(p.max_hp - p.hp, 0))}</div>` +
-    `<div class="rows">🂠×${p.hand_count}${equips.length ? "<br>⚙ " + equips.join("/") : ""}` +
-    `${judge.length ? "<br>" + judge.join(" ") : ""}</div>` +
-    (askSeats.has(p.seat) && p.alive ? `<div class="askmark">⏳</div>` : "") +
-    (!p.alive ? `<div class="askmark">💀</div>` : "");
+    `<div class="portrait${gimg ? "" : " nogen"}"${gimg ? ` style="background-image:url('${gimg}')"` : ""}>` +
+    `<span class="idn ${idCls}">${revealed ? (IDENTITY_ICON[idName] || "") + idName : "暗"}</span>` +
+    `${gimg ? "" : "未选将"}` +
+    (askSeats.has(p.seat) && p.alive ? `<span class="askmark">⏳</span>` : "") +
+    (!p.alive ? `<span class="askmark">💀</span>` : "") +
+    (p.chained && p.alive && !askSeats.has(p.seat) ? `<span class="chainmark">⛓️</span>` : "") +
+    `</div>` +
+    `<div class="fname">${escapeHtml(p.general || "未选将")} · ${escapeHtml(nicknameOf(p.seat))}${seatInfo.login === "susu" ? ' <span class="fsusu">🍑</span>' : ""}</div>` +
+    `<div class="fhp">${"❤️".repeat(Math.max(p.hp, 0))}${"🖤".repeat(Math.max(p.max_hp - p.hp, 0))}</div>` +
+    `<div class="fmeta">` +
+    `<span class="handbacks">${`<img src="${ASSETS}/misc/cardback.png" alt="">`.repeat(backs)}</span>×${p.hand_count}` +
+    (p.face_down ? `<span class="chip">🔄翻面</span>` : "") +
+    ((p.chuang && p.chuang.length) ? `<span class="chip">🩹创×${p.chuang.length}</span>` : "") +
+    equips.map((e) => `<span class="chip">⚙${escapeHtml(e)}</span>`).join("") +
+    judge.map((j) => `<span class="chip">${j}</span>`).join("") +
+    `</div>`;
+  // 悬停/长按立绘看这个武将的技能说明
+  if (p.general && GENERAL_HELP[p.general]) {
+    bindTip(div, p.general, "", gimg, GENERAL_HELP[p.general]);
+  }
   return div;
 }
 
@@ -794,8 +1090,9 @@ function renderMe(snap) {
   }
   const me = game.me;
   const mine = (game.players || []).find((p) => p.seat === me.seat) || {};
-  const phase = PHASE_NAMES[game.phase] || "";
+  const gimg = mine.general ? generalImg(mine.general) : "";
   $("meStrip").innerHTML =
+    (gimg ? `<div class="me-portrait" style="background-image:url('${gimg}')"></div>` : "") +
     `<span class="me-id">${IDENTITY_ICON[me.identity_name] || ""}${me.identity_name}</span>` +
     `<span><b>${escapeHtml(mine.general || "")}</b> · ${escapeHtml(nicknameOf(me.seat))}</span>` +
     `<span class="hp">${"❤️".repeat(Math.max(mine.hp || 0, 0))}${"🖤".repeat(Math.max((mine.max_hp || 0) - (mine.hp || 0), 0))}</span>`;
@@ -816,12 +1113,19 @@ function renderHand(cards) {
     const div = document.createElement("div");
     const red = SUIT_RED[c.suit];
     const canUse = usable === null || usable.has(c.id);
-    div.className = `pcard ${red ? "red" : "black"}` +
+    // 属性杀着色（画芯借杀图，靠描边区分火/雷）
+    const attrCls = c.name === "火杀" ? " attr-fire" : (c.name === "雷杀" ? " attr-thunder" : "");
+    div.className = `pcard ${red ? "red" : "black"}${attrCls}` +
       (canUse ? " usable" : " disabled") +
       (state.picking && state.picking.ids.has(c.id) ? " picked" : "");
-    div.innerHTML = `<div class="corner">${SUIT_CHAR[c.suit]}${rankText(c.rank)}</div>` +
+    const art = cardArt(c.name);
+    div.innerHTML = `<div class="corner">${SUIT_CHAR[c.suit]}<br>${rankText(c.rank)}</div>` +
+      (art ? `<div class="art" style="background-image:url('${art}')"></div>` : "") +
       `<div class="cname">${escapeHtml(c.name)}</div>`;
     div.onclick = () => onHandCardClick(c);
+    // 悬停/长按出说明书（效果文字）
+    const help = CARD_HELP[c.name];
+    if (help) bindTip(div, c.name, `${SUIT_CHAR[c.suit]}${rankText(c.rank)}`, art, help);
     box.appendChild(div);
   }
   if (!cards.length) box.innerHTML = `<div style="opacity:.55; font-size:12px; padding:20px 8px;">（空手）</div>`;
@@ -889,9 +1193,22 @@ function cardBtnLabel(entry) {
 /* 每种 kind 的面板搭建器 */
 const ASK_BUILDERS = {
   choose_general(box, ask) {
+    // 立绘选将：武将牌一字排开，点谁是谁
+    const row = document.createElement("div");
+    row.className = "general-picks";
     for (const g of (ask.options.generals || [])) {
-      box.appendChild(btn(g, () => sendAnswer({ general: g })));
+      const pick = document.createElement("button");
+      pick.className = "general-pick";
+      const img = generalImg(g);
+      pick.innerHTML =
+        (img ? `<span class="gp-portrait" style="background-image:url('${img}')"></span>` : "") +
+        `<span class="gp-name">${escapeHtml(g)}</span>`;
+      pick.onclick = () => sendAnswer({ general: g });
+      // 悬停/长按看这个武将的技能说明
+      if (GENERAL_HELP[g]) bindTip(pick, g, "", img, GENERAL_HELP[g]);
+      row.appendChild(pick);
     }
+    box.appendChild(row);
   },
 
   play_phase(box, ask) {
@@ -956,12 +1273,17 @@ const ASK_BUILDERS = {
 
   ask_tao(box, ask) {
     const taos = ask.options.cards || [];
+    const jius = ask.options.jiu || [];   // 军争：濒死者本人可用酒自救
     const dyingName = nicknameOf(ask.options.dying);
     const need = Math.max(1, 1 - Number(ask.options.hp ?? 0));
     note(box, `${dyingName} 倒下了（体力 ${ask.options.hp}），拉回 1 点要 ${need} 张桃`);
     for (let n = 1; n <= taos.length; n++) {
       box.appendChild(btn(`🍑 出 ${n} 张桃`, () => sendAnswer({ use: true, card_ids: taos.slice(0, n) })));
       if (n >= need) break;   // 多出的桃引擎也不会消耗，别摆一排按钮
+    }
+    for (let n = 1; n <= jius.length; n++) {
+      box.appendChild(btn(`🍶 喝 ${n} 张酒自救`, () => sendAnswer({ use: true, card_ids: jius.slice(0, n) }), "bronze"));
+      if (n >= need) break;
     }
     box.appendChild(btn("见死不救", () => sendAnswer({ use: false }), "ghost"));
   },
@@ -987,8 +1309,16 @@ const ASK_BUILDERS = {
     note(box, ask.prompt || "选一张牌");
     for (const zone of (ask.options.zones || [])) {
       if (zone.zone === "hand") {
-        for (let i = 0; i < (zone.count || 0); i++) {
-          box.appendChild(btn(`🂠 手牌${i + 1}`, () => sendAnswer({ zone: "hand", index: i }), "ghost"));
+        // 明示手牌（如火攻展示/火攻弃同花色）带花色点数，未明示的只给"手牌n"
+        const shown = zone.cards || [];
+        if (shown.length) {
+          shown.forEach((c, i) => {
+            box.appendChild(btn(`🂠 ${cardLabel(c)}`, () => sendAnswer({ zone: "hand", index: i }), "ghost"));
+          });
+        } else {
+          for (let i = 0; i < (zone.count || 0); i++) {
+            box.appendChild(btn(`🂠 手牌${i + 1}`, () => sendAnswer({ zone: "hand", index: i }), "ghost"));
+          }
         }
       } else {
         (zone.cards || []).forEach((c, i) => {
@@ -997,6 +1327,17 @@ const ASK_BUILDERS = {
         });
       }
     }
+    // 军争火攻：可放弃不弃牌
+    if (ask.options.allow_pass) {
+      box.appendChild(btn("放弃", () => sendAnswer({ pass: true }), "ghost"));
+    }
+  },
+
+  ask_doubt(box, ask) {
+    // 蛊惑质疑窗（军争/风包）：信或不信，一句话的事
+    note(box, `${nicknameOf(ask.options.declarer)} 扣置一张手牌，声明是【${ask.options.declared || "?"}】`);
+    box.appendChild(btn("🤨 质疑！", () => sendAnswer({ doubt: true })));
+    box.appendChild(btn("信了", () => sendAnswer({ doubt: false }), "ghost"));
   },
 
   skill_invoke(box, ask) {
@@ -1058,7 +1399,7 @@ function usableCardIds(ask) {
     case "ask_shan": case "ask_sha": case "ask_sha_for_duel":
       return new Set((o.cards || []).map((c) => c.card_id));
     case "ask_wuxie": return new Set(o.cards || []);
-    case "ask_tao": return new Set(o.cards || []);
+    case "ask_tao": return new Set([...(o.cards || []), ...(o.jiu || [])]);  // 军争：自救酒也亮
     case "discard_n": return new Set(o.selectable || []);
     default: return new Set();
   }
@@ -1127,6 +1468,24 @@ function startSkillFlow(sk) {
         for (const t of (hint.targets || [])) {
           box.appendChild(btn(nicknameOf(t),
             () => sendAnswer({ play: "skill", skill: "仁德", args: { target: t, card_ids: ids } })));
+        }
+        box.appendChild(btn("↩️ 算了", () => renderAsk(), "ghost"));
+      },
+    });
+    return;
+  }
+  if (sk.skill === "蛊惑") {
+    // 两步流：先点一张手牌扣置，再选要声明的牌名
+    startPick({
+      kind: "guhuo", pool: new Set(hint.hand_ids || []), need: 1,
+      hint: "蛊惑：点一张手牌扣置（别人看不到是什么）",
+      done: (ids) => {
+        const box = $("askOptions");
+        box.innerHTML = "";
+        note(box, "声明它是什么？（被质疑时亮真牌：真·质疑者掉血，假·牌作废）");
+        for (const d of (hint.declares || [])) {
+          box.appendChild(btn(`声明【${d}】`, () =>
+            sendAnswer({ play: "skill", skill: "蛊惑", args: { card_id: ids[0], declare: d } })));
         }
         box.appendChild(btn("↩️ 算了", () => renderAsk(), "ghost"));
       },
@@ -1225,7 +1584,6 @@ async function qqCheckAndJoin() {
 cloudInit();
 if (CLOUD) {
   $("qqBlock").style.display = "block";
-  $("inviteSusuBtn").style.display = "none";  // 云端暂不能请苏苏（7.3 白名单没这门）
   $("qqReqBtn").addEventListener("click", qqRequestCode);
   $("qqCheckBtn").addEventListener("click", qqCheckAndJoin);
 }
