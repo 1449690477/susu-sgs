@@ -110,8 +110,10 @@
     font-size: 11.5px; font-weight: 800; color: var(--bronze); }
 
   /* 桌游化环形牌桌：座位层围绕中央桌芯；战报/聊天/手牌置于桌外控制区。 */
-  #tableFelt { padding: 12px; background-color: #221b12; background-size: cover;
-    background-position: center; position: relative; isolation: isolate; }
+  #tableFelt { padding: 12px; background-color: #221b12;
+    background-size: 100% 100%, min(1207px, 100%) auto; background-repeat: no-repeat, no-repeat;
+    background-position: center, center top;
+    position: relative; isolation: isolate; }
   #seatRing { position: relative; height: clamp(560px, 58vw, 650px); border-radius: 46%; overflow: hidden;
     background: radial-gradient(ellipse at center, rgba(62,88,61,.66) 0 43%, rgba(29,43,30,.75) 44% 56%, rgba(15,13,9,.42) 57% 100%);
     border: 5px solid #65472a; box-shadow: inset 0 0 0 3px rgba(212,174,91,.25),
@@ -195,8 +197,9 @@
   .foe.current { border-color: var(--gold);
     box-shadow: 0 0 0 2px rgba(185,138,47,.55), 0 0 18px rgba(185,138,47,.45); }
   .foe.dead { opacity: .45; filter: grayscale(.9); }
-  .foe .portrait { position: relative; height: 96px; border-radius: 7px; overflow: hidden;
-    background: #171208 center/cover; border: 1px solid rgba(216,203,170,.4); }
+  .foe .portrait { position: relative; aspect-ratio: 350 / 464; height: auto; border-radius: 7px; overflow: hidden;
+    background-color: #171208; background-position: center; background-size: contain; background-repeat: no-repeat;
+    border: 1px solid rgba(216,203,170,.4); }
   .foe .portrait.nogen { display: flex; align-items: center; justify-content: center;
     color: rgba(240,231,210,.5); font-size: 11px; }
   .foe .idn { position: absolute; top: 3px; left: 3px; font-size: 10px; font-weight: 800;
@@ -220,7 +223,7 @@
     border-radius: 4px; padding: 0 4px; font-size: 9.5px; }
   .foe.self-seat { width: 132px; border-color: #f4c54f; background: rgba(45,33,15,.92);
     box-shadow: 0 0 0 2px rgba(244,197,79,.32), 0 8px 20px rgba(0,0,0,.55); }
-  .foe.self-seat .portrait { height: 82px; }
+  .foe.self-seat .portrait { height: auto; }
   .foe.self-seat .fname { color: #ffe3a0; }
   .self-identity { display: inline-block; margin-left: 3px; border-radius: 5px; padding: 0 4px;
     background: var(--seal); color: #fff; font-size: 9px; }
@@ -234,12 +237,30 @@
     box-shadow: 2px 2px 0 rgba(0,0,0,.4), 4px 4px 0 rgba(0,0,0,.25); }
   .pile .cnt { position: absolute; right: -4px; top: -6px; background: var(--seal); color: #fff;
     border-radius: 999px; font-size: 10px; font-weight: 800; padding: 0 6px; }
-  .center .discard-row { flex: 0 1 auto; display: flex; align-items: center; gap: 5px;
-    font-size: 11px; color: rgba(240,231,210,.8); flex-wrap: wrap; }
-  .mini-card { display: inline-flex; flex-direction: column; align-items: center;
-    width: 30px; border-radius: 4px; background: #fdf8ec; border: 1px solid #999;
-    font-size: 8.5px; font-weight: 800; line-height: 1.1; padding: 1px 0; }
-  .mini-card .mc-corner { font-size: 8px; }
+  .table-card-zones { display: grid; grid-template-columns: 1fr 1.35fr; gap: 8px; }
+  .table-card-zone { min-width: 0; border-radius: 10px; padding: 6px;
+    background: rgba(5,12,7,.46); border: 1px solid rgba(221,198,137,.23); }
+  .zone-label { display: block; color: #d8cbaa; font-size: 9px; font-weight: 900; margin-bottom: 4px; }
+  #processingRow, .discard-row { min-height: 72px; display: flex; align-items: center;
+    gap: 5px; overflow-x: auto; padding: 2px; }
+  .card-face { --card-w: 74px; width: var(--card-w); aspect-ratio: 3 / 4.15; flex: 0 0 auto;
+    position: relative; overflow: hidden; border-radius: calc(var(--card-w) * .09);
+    background: #eee3c6; border: 2px solid #8a7a5c; box-shadow: 0 3px 8px rgba(0,0,0,.48); }
+  .card-face .cf-art { position: absolute; left: 4%; right: 4%; top: 8%; bottom: 15%;
+    background-color: #e8dfc8; background-position: center; background-size: 92% auto;
+    background-repeat: no-repeat; filter: saturate(.98) contrast(1.02); }
+  .card-face .cf-corner { position: absolute; z-index: 3; top: 3px; left: 4px;
+    font-size: calc(var(--card-w) * .15); font-weight: 900; line-height: 1.05;
+    text-align: center; text-shadow: 0 0 3px #fff4d8, 0 0 3px #fff4d8; }
+  .card-face .cf-name { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0;
+    padding: 2px 1px; text-align: center; font-size: calc(var(--card-w) * .16);
+    font-weight: 900; background: rgba(253,248,236,.94); }
+  .card-face.red .cf-corner, .card-face.red .cf-name { color: var(--red-suit); }
+  .card-face.black .cf-corner, .card-face.black .cf-name { color: var(--black-suit); }
+  .card-face.compact { --card-w: 46px; border-width: 1px; }
+  .card-face.table-card { --card-w: 54px; }
+  .card-face.attr-fire { border-color: #d4553a; box-shadow: 0 0 10px rgba(224,88,44,.55); }
+  .card-face.attr-thunder { border-color: #8a5fd0; box-shadow: 0 0 10px rgba(138,95,208,.55); }
 
   /* 日志 + 聊天（压暗半透，融进桌面） */
   .feed { height: 132px; overflow-y: auto; background: rgba(23,18,8,.35);
@@ -259,7 +280,8 @@
     border-radius: 12px; padding: 8px 10px; }
   .me-strip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     margin-bottom: 6px; font-size: 12.5px; color: #f0e7d2; }
-  .me-portrait { width: 46px; height: 62px; border-radius: 6px; background: #171208 center/cover;
+  .me-portrait { width: 46px; aspect-ratio: 350 / 464; border-radius: 6px;
+    background-color: #171208; background-position: center; background-size: contain; background-repeat: no-repeat;
     border: 2px solid var(--gold); flex: 0 0 auto; }
   .me-id { font-weight: 800; background: var(--seal); color: #fff;
     border-radius: 8px; padding: 2px 9px; }
@@ -273,29 +295,15 @@
   .hand { display: flex; gap: 6px; overflow-x: auto; padding: 8px 2px 10px; min-height: 116px; }
   .hand::-webkit-scrollbar { height: 4px; }
   .hand::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); border-radius: 99px; }
-  .pcard { flex: 0 0 auto; width: 74px; height: 102px; background: #fdf8ec;
-    border: 2px solid #8a7a5c; border-radius: 7px; cursor: pointer; position: relative;
-    transition: transform .12s, border-color .12s, box-shadow .12s;
-    box-shadow: 0 2px 6px rgba(0,0,0,.45); overflow: hidden; }
-  .pcard .corner { position: absolute; top: 2px; left: 4px; z-index: 2; font-size: 11px;
-    font-weight: 800; line-height: 1.1; text-align: center;
-    text-shadow: 0 0 3px #fdf8ec, 0 0 3px #fdf8ec; }
-  .pcard .art { position: absolute; inset: 0; background: #e8dfc8 center/cover; opacity: .92; }
-  .pcard .cname { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
-    background: rgba(253,248,236,.92); font-weight: 800; font-size: 12px; line-height: 1.2;
-    text-align: center; padding: 1px 0; }
-  .pcard.red .corner, .pcard.red .cname { color: var(--red-suit); }
-  .pcard.black .corner, .pcard.black .cname { color: var(--black-suit); }
+  .pcard { cursor: pointer; transition: transform .12s, border-color .12s, box-shadow .12s; }
   .pcard.usable { border-color: #6fbf8f; box-shadow: 0 0 0 2px rgba(111,191,143,.55),
     0 0 14px rgba(111,191,143,.5); }
   .pcard.picked { transform: translateY(-10px); border-color: var(--seal);
     box-shadow: 0 10px 18px rgba(0,0,0,.5), 0 0 0 2px var(--seal); }
   .pcard.disabled { opacity: .5; cursor: default; filter: grayscale(.55); }
   /* 属性杀着色：火杀火红、雷杀雷紫 */
-  .pcard.attr-fire .cname { color: #c22410; }
-  .pcard.attr-fire { border-color: #d4553a; box-shadow: 0 0 10px rgba(224,88,44,.55); }
-  .pcard.attr-thunder .cname { color: #6b3fb5; }
-  .pcard.attr-thunder { border-color: #8a5fd0; box-shadow: 0 0 10px rgba(138,95,208,.55); }
+  .pcard.attr-fire .cf-name { color: #c22410; }
+  .pcard.attr-thunder .cf-name { color: #6b3fb5; }
   .pcard.attr-fire.usable { box-shadow: 0 0 0 2px rgba(111,191,143,.55), 0 0 14px rgba(224,88,44,.7); }
   .pcard.attr-thunder.usable { box-shadow: 0 0 0 2px rgba(111,191,143,.55), 0 0 14px rgba(138,95,208,.7); }
   /* 铁索横置 */
@@ -306,7 +314,7 @@
   @media (max-width: 900px) {
     #seatRing { height: 590px; }
     .foe { width: 96px; }
-    .foe .portrait { height: 74px; }
+    .foe .portrait { height: auto; }
     .foe .fmeta { max-height: 42px; overflow: hidden; }
     #tableCore { width: 44%; min-height: 140px; padding: 10px; }
   }
@@ -320,21 +328,25 @@
     #actionBurst .ab-route { font-size: 10px; }
     #actionBurst .ab-detail { font-size: 9px; }
     .action-arrow { stroke-width: 3; }
-    .foe .portrait { height: 58px; }
+    .foe .portrait { height: auto; }
     .foe .fname { font-size: 9px; }
     .foe .fhp { font-size: 8px; letter-spacing: 0; }
     .foe .fmeta { font-size: 8px; min-height: 18px; max-height: 28px; }
     .foe.self-seat { width: 88px; }
-    .foe.self-seat .portrait { height: 62px; }
+    .foe.self-seat .portrait { height: auto; }
     .table-seat .seat-relation { top: -11px; padding: 1px 5px; font-size: 8px; }
     .topbar { align-items: flex-start; }
     .status-pill { max-width: 100%; border-radius: 14px; }
-    #tableCore { top: 44%; width: 43%; min-height: 112px; padding: 7px; gap: 6px; }
+    #tableCore { top: 44%; width: 52%; min-height: 150px; padding: 7px; gap: 6px; }
+    .table-card-zones { gap: 4px; }
+    #processingRow, .discard-row { min-height: 60px; gap: 3px; }
     #tableCore .banner { font-size: 10px; }
     .pile { width: 34px; }
     .pile img { width: 30px; height: 42px; }
     #tableTools { grid-template-columns: 1fr; }
-    .pcard { width: 62px; height: 88px; }
+    .pcard { --card-w: 62px; }
+    .card-face.table-card { --card-w: 43px; }
+    .card-face.compact { --card-w: 38px; }
     .hand { min-height: 102px; }
     .feed { height: 84px; }
   }
@@ -391,14 +403,9 @@
   body.spectating #chatRow { display: none; }
 
   /* ---------- M5c 动效：出牌飞牌 / 受击震动 ---------- */
-  .flycard { position: fixed; width: 66px; height: 92px; border-radius: 8px; z-index: 120;
-    background: #fdf8ec center/cover; border: 2px solid #8a7a5c; pointer-events: none;
+  .card-face.flycard { --card-w: 74px; position: fixed; z-index: 120; pointer-events: none;
     left: 50%; bottom: 150px; transform: translateX(-50%);
     animation: flyUp .9s ease-out forwards; box-shadow: 0 8px 20px rgba(0,0,0,.55); }
-  .flycard .fly-corner { position: absolute; top: 3px; left: 5px; font-size: 11px;
-    font-weight: 800; text-shadow: 0 0 3px #fdf8ec, 0 0 3px #fdf8ec; }
-  .flycard .fly-name { position: absolute; left: 0; right: 0; bottom: 0; text-align: center;
-    background: rgba(253,248,236,.92); font-size: 12px; font-weight: 800; padding: 1px 0; }
   @keyframes flyUp {
     0% { opacity: 0; transform: translateX(-50%) translateY(60px) scale(.6) rotate(-8deg); }
     25% { opacity: 1; }
@@ -488,7 +495,10 @@ window.SGS_CLOUD = {
             <div class="pile"><img id="deckImg" alt="牌堆"><span class="cnt" id="deckCount">0</span><div>牌堆</div></div>
             <div class="banner" id="banner">🏮 等待开局…</div>
           </div>
-          <div class="discard-row" id="discardRow"></div>
+          <div class="table-card-zones">
+            <div class="table-card-zone processing-zone"><span class="zone-label">⚔ 结算中</span><div id="processingRow"></div></div>
+            <div class="table-card-zone discard-zone"><span class="zone-label">🗑 弃牌 <b id="discardCount">0</b></span><div class="discard-row" id="discardRow"></div></div>
+          </div>
         </div>
       </div>
       <div id="tableTools">
@@ -568,6 +578,25 @@ const GENERAL_IMG = {
 };
 function cardArt(name) { const k = CARD_ART[name]; return k ? `${ASSETS}/cards/${k}.png` : ""; }
 function generalImg(name) { const k = GENERAL_IMG[name]; return k ? `${ASSETS}/characters/${k}.jpg` : ""; }
+function cardFaceHtml(card, cls = "") {
+  const red = !!SUIT_RED[card.suit], art = cardArt(card.name);
+  const attr = card.name === "火杀" ? " attr-fire" : (card.name === "雷杀" ? " attr-thunder" : "");
+  return `<div class="card-face ${red ? "red" : "black"}${attr}${cls ? ` ${cls}` : ""}" data-card-id="${card.id}">` +
+    `<div class="cf-art"${art ? ` style="background-image:url('${art}')"` : ""}></div>` +
+    `<div class="cf-corner">${SUIT_CHAR[card.suit] || "?"}<br>${rankText(card.rank)}</div>` +
+    `<div class="cf-name">${escapeHtml(card.name)}</div></div>`;
+}
+function createCardFace(card, cls = "") {
+  const div = document.createElement("div");
+  const red = !!SUIT_RED[card.suit], art = cardArt(card.name);
+  const attr = card.name === "火杀" ? " attr-fire" : (card.name === "雷杀" ? " attr-thunder" : "");
+  div.className = `card-face ${red ? "red" : "black"}${attr}${cls ? ` ${cls}` : ""}`;
+  div.dataset.cardId = String(card.id);
+  div.innerHTML = `<div class="cf-art"${art ? ` style="background-image:url('${art}')"` : ""}></div>` +
+    `<div class="cf-corner">${SUIT_CHAR[card.suit] || "?"}<br>${rankText(card.rank)}</div>` +
+    `<div class="cf-name">${escapeHtml(card.name)}</div>`;
+  return div;
+}
 
 /* ---------------- 卡牌/武将说明书（悬浮预览） ---------------- */
 const CARD_HELP = {
@@ -674,6 +703,7 @@ const state = {
   askDeadline: 0,      // 倒计时
   picking: null,       // 进行中的多选交互 {kind, ids:Set, need, ...}
   answerSending: false, // 云端函数返回前锁住本次作答，防双击写两封同 ask_id 信件
+  processingCards: [],  // card_move 即时维护；state_sync 的 game.processing 是最终事实源
   lastAction: null,     // 最近结构化动作，state_sync 重绘 DOM 后可恢复关系强调
 };
 let ws = null, wsClosed = false, cdTimer = null, actionTimer = null;
@@ -1000,6 +1030,7 @@ function handleMessage(msg) {
       if (msg.role) state.role = msg.role;
       if (typeof msg.seat === "number") state.seat = msg.seat;
       state.snapshot = msg.snapshot || {};
+      state.processingCards = ((((state.snapshot || {}).game || {}).processing) || []).slice();
       if (msg.seat_revoked) {
         state.role = null; state.seat = null; state.seatToken = ""; state.ask = null;
         try {
@@ -1050,21 +1081,26 @@ function handleMessage(msg) {
     case "action_focus":
       showActionFocus(msg, false);
       break;
-    case "card_move":
-      // M5c 出牌飞牌：公开的牌移动飞一张到桌面中央
-      if (msg.public && msg.cards && msg.cards.length && document.createElement) {
-        const c = msg.cards[msg.cards.length - 1];
-        const fly = document.createElement("div");
-        fly.className = "flycard";
-        const art = cardArt(c.name);
-        if (art) fly.style.backgroundImage = `url('${art}')`;
-        const red = SUIT_RED[c.suit];
-        fly.innerHTML = `<div class="fly-corner" style="color:${red ? "var(--red-suit)" : "var(--black-suit)"}">${SUIT_CHAR[c.suit]}${rankText(c.rank)}</div>` +
-          `<div class="fly-name" style="color:${red ? "var(--red-suit)" : "var(--black-suit)"}">${escapeHtml(c.name)}</div>`;
+    case "card_move": {
+      const moved = (msg.public && msg.cards) ? msg.cards : [];
+      const movedIds = new Set(moved.map((card) => card.id));
+      if (msg.from_zone === "processing") {
+        state.processingCards = state.processingCards.filter((card) => !movedIds.has(card.id));
+      }
+      if (msg.to_zone === "processing" && moved.length) {
+        const known = new Set(state.processingCards.map((card) => card.id));
+        state.processingCards.push(...moved.filter((card) => !known.has(card.id)));
+      }
+      const liveGame = (state.snapshot || {}).game || {};
+      renderTableCardZones({ ...liveGame, processing: state.processingCards });
+      // 公开出牌使用与桌面同源的完整 CardFace 飞入，不再另造文字卡。
+      if (msg.to_zone === "processing" && moved.length && document.createElement) {
+        const fly = createCardFace(moved[moved.length - 1], "flycard");
         (document.body || $("tableCard")).appendChild(fly);
         setTimeout(() => { if (fly.parentNode) fly.parentNode.removeChild(fly); }, 1000);
       }
       break;
+    }
     case "chat":
       addFeed(`<span class="who">${escapeHtml(msg.nickname)}:</span> ${escapeHtml(msg.text)}`, "chatline", true);
       break;
@@ -1320,22 +1356,27 @@ function renderTable(snap) {
     applySeatLayout(node, p.seat, viewerSeat, players.length);
     seatLayer.appendChild(node);
   }
-  // 牌堆计数
+  // 牌堆、处理中、弃牌区全部使用同一 CardFace 组件与固定比例。
   $("deckCount").textContent = String(game.deck_count ?? 0);
-  // 弃牌堆：最近四张摆迷你卡面
-  const dr = $("discardRow");
-  const recent = (game.discard || []).slice(-4).reverse();
-  dr.innerHTML = `<span>弃牌 ${game.discard_count}</span>` +
-    (recent.length ? recent.map((c) => {
-      const red = SUIT_RED[c.suit];
-      return `<span class="mini-card" style="color:${red ? "var(--red-suit)" : "var(--black-suit)"}">` +
-        `<span class="mc-corner">${SUIT_CHAR[c.suit]}${rankText(c.rank)}</span>` +
-        `<span>${escapeHtml(c.name)}</span></span>`;
-    }).join("") : "");
+  renderTableCardZones(game);
   renderMe(snap);
   if (state.lastAction && actionTimer && typeof requestAnimationFrame === "function") {
     requestAnimationFrame(() => showActionFocus(state.lastAction, true));
   }
+}
+
+function renderTableCardZones(game) {
+  const processing = (Array.isArray(game.processing) ? game.processing : state.processingCards).slice(-3);
+  state.processingCards = processing.slice();
+  const processingRow = $("processingRow");
+  processingRow.innerHTML = processing.length
+    ? processing.map((card) => cardFaceHtml(card, "table-card")).join("")
+    : `<span style="opacity:.45;font-size:10px;">等待出牌</span>`;
+  const discard = (game.discard || []).slice(-6).reverse();
+  $("discardCount").textContent = String(game.discard_count ?? discard.length);
+  $("discardRow").innerHTML = discard.length
+    ? discard.map((card) => cardFaceHtml(card, "compact")).join("")
+    : `<span style="opacity:.45;font-size:10px;">暂无弃牌</span>`;
 }
 
 function renderFoe(p, snap, cur, askSeats, isSelf) {
@@ -1409,18 +1450,11 @@ function renderHand(cards) {
   // 当前询问允许点的 card_id 集合（预取选项直接映射，7.5 优化②）
   const usable = usableCardIds(ask);
   for (const c of cards) {
-    const div = document.createElement("div");
-    const red = SUIT_RED[c.suit];
     const canUse = usable === null || usable.has(c.id);
-    // 属性杀着色（画芯借杀图，靠描边区分火/雷）
-    const attrCls = c.name === "火杀" ? " attr-fire" : (c.name === "雷杀" ? " attr-thunder" : "");
-    div.className = `pcard ${red ? "red" : "black"}${attrCls}` +
-      (canUse ? " usable" : " disabled") +
-      (state.picking && state.picking.ids.has(c.id) ? " picked" : "");
+    const div = createCardFace(c, "pcard");
+    div.classList.add(canUse ? "usable" : "disabled");
+    if (state.picking && state.picking.ids.has(c.id)) div.classList.add("picked");
     const art = cardArt(c.name);
-    div.innerHTML = `<div class="corner">${SUIT_CHAR[c.suit]}<br>${rankText(c.rank)}</div>` +
-      (art ? `<div class="art" style="background-image:url('${art}')"></div>` : "") +
-      `<div class="cname">${escapeHtml(c.name)}</div>`;
     div.onclick = () => onHandCardClick(c);
     // 悬停/长按出说明书（效果文字）
     const help = CARD_HELP[c.name];
