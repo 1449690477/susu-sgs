@@ -126,7 +126,7 @@
   .action-arrow.buff, .action-arrow.equip { stroke: #ffd05a; }
   @keyframes actionDash { to { stroke-dashoffset: -40; } }
   @keyframes actionFade { 0%,72% { opacity: 1; } 100% { opacity: 0; } }
-  #actionBurst { display: none; position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%);
+  #actionBurst { display: none; position: fixed; z-index: 75; left: 50%; top: 42%; transform: translate(-50%,-50%);
     min-width: 190px; max-width: 76%; padding: 11px 18px; border-radius: 14px;
     background: rgba(22,14,8,.94); border: 2px solid #ffd05a; color: #fff; text-align: center;
     box-shadow: 0 0 0 4px rgba(255,208,90,.16), 0 14px 32px rgba(0,0,0,.65);
@@ -635,8 +635,7 @@ function actionToneClass(tone) {
   return ["damage", "attack", "fire", "thunder", "heal", "skill", "buff", "equip", "lose_hp"].includes(tone)
     ? tone : "card";
 }
-function clearActionFocus() {
-  if (actionTimer) { clearTimeout(actionTimer); actionTimer = null; }
+function clearActionVisuals() {
   let focused = document.querySelectorAll ? Array.from(document.querySelectorAll(".action-source,.action-target")) : [];
   if (!focused.length) {
     const players = ((((state.snapshot || {}).game || {}).players) || []);
@@ -650,6 +649,11 @@ function clearActionFocus() {
   }
   const svg = $("actionFxSvg"); if (svg) svg.innerHTML = "";
   const burst = $("actionBurst"); if (burst) { burst.className = ""; burst.style.display = "none"; }
+}
+function clearActionFocus() {
+  if (actionTimer) { clearTimeout(actionTimer); actionTimer = null; }
+  clearActionVisuals();
+  state.lastAction = null;
 }
 function drawActionArrow(actorNode, targetNode, tone) {
   const svg = $("actionFxSvg"), felt = $("tableFelt");
@@ -677,10 +681,12 @@ function drawActionArrow(actorNode, targetNode, tone) {
 function showActionFocus(msg, replay) {
   if (!msg) return;
   if (replay) {
-    const focused = document.querySelectorAll ? document.querySelectorAll(".action-source,.action-target") : [];
-    if (focused.length) return;
+    // state_sync 会整批重建对家 DOM；保留原计时器，但必须把关系视觉完整绑到新节点。
+    clearActionVisuals();
+  } else {
+    if (actionTimer) { clearTimeout(actionTimer); actionTimer = null; }
+    clearActionVisuals(); state.lastAction = msg;
   }
-  clearActionFocus(); state.lastAction = msg;
   const tone = actionToneClass(msg.tone || "card");
   const actorNode = seatNode(msg.actor);
   if (actorNode) actorNode.classList.add("action-source");
@@ -1138,7 +1144,7 @@ function renderAll() {
   const inGame = snap.phase === "playing" || snap.phase === "finished";
   $("lobbyCard").style.display = (!inGame && state.role) ? "block" : "none";
   $("tableCard").style.display = inGame ? "block" : "none";
-  if (!inGame) { clearActionFocus(); state.lastAction = null; renderLobby(snap); return; }
+  if (!inGame) { clearActionFocus(); renderLobby(snap); return; }
   renderTable(snap);
 }
 
@@ -1208,7 +1214,7 @@ function renderTable(snap) {
         `<span>${escapeHtml(c.name)}</span></span>`;
     }).join("") : "");
   renderMe(snap);
-  if (state.lastAction && !actionTimer && typeof requestAnimationFrame === "function") {
+  if (state.lastAction && actionTimer && typeof requestAnimationFrame === "function") {
     requestAnimationFrame(() => showActionFocus(state.lastAction, true));
   }
 }
