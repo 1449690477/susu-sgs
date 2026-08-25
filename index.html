@@ -351,17 +351,32 @@
     .feed { height: 84px; }
   }
 
-  /* 询问面板：底部浮层 */
+  /* 决策台：固定在首屏顶部中央，主动吸引注意；不再藏在长页面最底部。 */
   #askSheet {
-    display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-    background: var(--panel); border-top: 3px solid var(--seal);
-    box-shadow: 0 -12px 40px rgba(44, 38, 29, .28); padding: 12px 14px 16px;
+    display: none; position: fixed; left: 50%; top: 68px; bottom: auto; z-index: 88;
+    width: min(620px, calc(100vw - 36px)); max-height: min(48vh, 430px); overflow-y: auto;
+    background: rgba(253,248,236,.98); border: 3px solid var(--seal); border-radius: 18px;
+    box-shadow: 0 0 0 5px rgba(179,57,43,.16), 0 18px 48px rgba(44,38,29,.48);
+    padding: 14px 16px 16px; transform: translateX(-50%); animation: decisionIn .22s ease-out;
   }
-  #askSheet .inner { max-width: 780px; margin: 0 auto; }
-  #askPrompt { font-size: 14px; font-weight: 800; margin-bottom: 8px; }
+  #askSheet::before { content: "轮到你了"; display: inline-block; margin: -2px 0 8px;
+    border-radius: 999px; padding: 3px 10px; background: var(--seal); color: #fff;
+    font-size: 11px; font-weight: 900; letter-spacing: 1px; }
+  #askSheet .inner { margin: 0; }
+  #askPrompt { font-size: 16px; font-weight: 900; margin-bottom: 10px; color: var(--ink); }
+  @keyframes decisionIn { from { opacity: 0; transform: translateX(-50%) translateY(18px) scale(.96); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
   #askPrompt .cd { color: var(--seal); font-variant-numeric: tabular-nums; }
   #askOptions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .opt-note { font-size: 11.5px; color: var(--ink-soft); width: 100%; }
+  @media (max-width: 640px) {
+    #askSheet { left: 8px; right: 8px; top: 8px; bottom: auto; width: auto; max-height: 46vh;
+      border-radius: 15px; padding: 10px 11px 12px; transform: none; }
+    @keyframes decisionIn { from { opacity: 0; transform: translateY(14px) scale(.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); } }
+    #askPrompt { font-size: 14px; }
+    #askOptions .btn { flex: 1 1 auto; }
+  }
 
   /* 立绘选将 */
   .general-picks { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -481,6 +496,8 @@ window.SGS_CLOUD = {
       <div class="status-pill"><span class="dot"></span><span id="statusText">备局中…</span></div>
       <div class="actions-row">
         <span class="spec-badge" id="specBadge">👀 <span id="specCount">0</span>/10</span>
+        <button class="btn" id="nextGameBtn" style="display:none;">再来一局 ⚔️</button>
+        <button class="btn ghost small" id="disbandBtn" style="display:none;">🧹 解散牌桌</button>
         <button class="btn ghost small" id="nudgeBtn">👉 催一催</button>
         <button class="btn ghost small" id="leaveBtn">🚪 离座</button>
       </div>
@@ -703,6 +720,7 @@ const state = {
   askDeadline: 0,      // 倒计时
   picking: null,       // 进行中的多选交互 {kind, ids:Set, need, ...}
   answerSending: false, // 云端函数返回前锁住本次作答，防双击写两封同 ask_id 信件
+  leaving: false,       // 主动离座期间忽略并发旧快照，避免刚清标记又被 state_sync 写回来
   processingCards: [],  // card_move 即时维护；state_sync 的 game.processing 是最终事实源
   lastAction: null,     // 最近结构化动作，state_sync 重绘 DOM 后可恢复关系强调
 };
@@ -954,6 +972,10 @@ async function cloudApi(path, body) {
   if (path === "start") return cloudPost("start", {});
   if (path === "answer") return cloudPost("answer", { ask_id: body.ask_id, choice: body.choice });
   if (path === "chat") return cloudPost("chat", { text: body.text });
+  if (path === "action" && body.action === "disband") {
+    // 兼容尚未加入 disband 白名单的旧 Edge Function：由家里桥二次验房主后解散。
+    return cloudPost("chat", { text: "/__sgs_disband__" });
+  }
   if (path === "action") return cloudPost("action", { action: body.action });
   // 兼容早期已部署的 sgs-post：旧函数尚无 susu_join 白名单，但 chat 从首版就支持。
   // 家里的桥截获这条内部指令，不会把它作为桌聊广播。
@@ -1028,13 +1050,14 @@ function handleMessage(msg) {
   }
   switch (msg.type) {
     case "state_sync": {
+      if (state.leaving && !msg.seat_revoked) break;
       // 云端桥的回音带 role/seat：入座与刷新报到都靠它认领身份
       if (msg.role) state.role = msg.role;
       if (typeof msg.seat === "number") state.seat = msg.seat;
       state.snapshot = msg.snapshot || {};
       state.processingCards = ((((state.snapshot || {}).game || {}).processing) || []).slice();
       if (msg.seat_revoked) {
-        state.role = null; state.seat = null; state.seatToken = ""; state.ask = null;
+        state.role = null; state.seat = null; state.seatToken = ""; state.ask = null; state.leaving = false;
         try {
           localStorage.removeItem("sgs_seat_uid");
           localStorage.removeItem("sgs_seat_token");
@@ -1237,8 +1260,16 @@ async function inviteSusu() {
   } catch (e) { showToast(e.message || "苏苏没来成"); }
 }
 async function startGame() {
-  try { await api("start", { seat_token: state.seatToken, room_code: state.roomCode }); }
-  catch (e) { showToast(e.message); }
+  try {
+    await api("start", { seat_token: state.seatToken, room_code: state.roomCode });
+    showToast("新一局已开，正在选将 ⚔️");
+  } catch (e) { showToast(e.message); }
+}
+async function disbandTable() {
+  if (!confirm("确定解散牌桌？所有人会回到入座页面。")) return;
+  try {
+    await api("action", { seat_token: state.seatToken, action: "disband", room_code: state.roomCode });
+  } catch (e) { showToast(e.message || "解散失败"); }
 }
 async function doLeave() {
   if (state.role === "spectator") {
@@ -1259,7 +1290,25 @@ async function doLeave() {
     location.reload();
     return;
   }
-  try { await api("action", { seat_token: state.seatToken, action: "leave", room_code: state.roomCode }); } catch (e) {}
+  state.leaving = true;
+  try {
+    if (CLOUD) {
+      const waiter = cloudWaiter((event) => event.type === "state_sync" && event.seat_revoked,
+        12000, "离座确认超时，请再点一次");
+      try { await api("action", { seat_token: state.seatToken, action: "leave", room_code: state.roomCode }); }
+      catch (error) { waiter.cancel(); throw error; }
+      await waiter.promise;
+    } else {
+      await api("action", { seat_token: state.seatToken, action: "leave", room_code: state.roomCode });
+    }
+    if (CLOUD) {
+      try { localStorage.removeItem("sgs_cloud_seated"); } catch (e) {}
+      state.role = null; state.seat = null; state.ask = null; state.snapshot = null; state.leaving = false;
+      $("lobbyCard").style.display = "none"; $("tableCard").style.display = "none";
+      $("enterCard").style.display = "block"; hideAsk(true); showToast("已离座");
+      return;
+    }
+  } catch (e) { state.leaving = false; showToast(e.message || "离座失败"); return; }
   // 对局中离座会转托管，保留本机凭据才能稍后安全回座；等待态离座后旧凭据自然失效。
   wsClosed = true; try { ws && ws.close(); } catch (e) {}
   location.reload();
@@ -1269,11 +1318,25 @@ async function doLeave() {
 function renderAll() {
   const snap = state.snapshot;
   if (!snap) return;
+  if (snap.phase === "playing") {
+    overShown = false;
+    $("overlay").style.display = "none";
+  }
   const inGame = snap.phase === "playing" || snap.phase === "finished";
   $("lobbyCard").style.display = (!inGame && state.role) ? "block" : "none";
   $("tableCard").style.display = inGame ? "block" : "none";
   if (!inGame) { clearActionFocus(); renderLobby(snap); return; }
   renderTable(snap);
+  renderGameActions(snap);
+}
+
+function renderGameActions(snap) {
+  const meOwner = (snap.seats || []).some((seat) => seat.seat === state.seat && seat.is_owner);
+  const canRestart = snap.phase === "finished" && meOwner && (snap.seat_count || 0) >= 2;
+  $("nextGameBtn").style.display = canRestart ? "" : "none";
+  $("disbandBtn").style.display = snap.phase === "finished" && meOwner ? "" : "none";
+  $("nudgeBtn").style.display = snap.phase === "playing" ? "" : "none";
+  $("leaveBtn").textContent = snap.phase === "finished" ? "🚪 离座等下局" : "🚪 离座";
 }
 
 function renderLobby(snap) {
@@ -1480,6 +1543,7 @@ function setAsk(ask) {
   if (state.ask && state.ask.ask_id === ask.ask_id) { state.ask = ask; renderAsk(); return; }
   state.ask = ask;
   state.picking = null;
+  document.title = "⏳ 轮到你了 · 苏苏三国杀";
   state.askDeadline = Date.now() + (Number(ask.timeout_s) || 45) * 1000;
   renderAsk();
   renderAll();       // 手牌可用态跟着询问变
@@ -1487,6 +1551,7 @@ function setAsk(ask) {
 function hideAsk(clearAsk) {
   if (clearAsk) { state.ask = null; state.picking = null; state.answerSending = false; }
   $("askSheet").style.display = "none";
+  document.title = "🎴 苏苏的三国小杀场 · 竹简烽火";
   if (cdTimer) { clearInterval(cdTimer); cdTimer = null; }
 }
 function remainSec() { return Math.max(0, Math.ceil((state.askDeadline - Date.now()) / 1000)); }
@@ -1877,6 +1942,8 @@ function showGameOver(msg) {
 $("joinBtn").addEventListener("click", doJoin);
 $("spectateBtn").addEventListener("click", doSpectate);
 $("startBtn").addEventListener("click", startGame);
+$("nextGameBtn").addEventListener("click", startGame);
+$("disbandBtn").addEventListener("click", disbandTable);
 $("inviteSusuBtn").addEventListener("click", inviteSusu);
 $("leaveLobbyBtn").addEventListener("click", doLeave);
 $("leaveBtn").addEventListener("click", doLeave);
