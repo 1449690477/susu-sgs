@@ -923,6 +923,8 @@ function cloudWaiter(match, ms, timeoutMsg) {
   return w;
 }
 async function cloudPost(type, payload) {
+  // 输入框是口令唯一事实源；所有云端事件在统一出口同步，避免入口漏写 state。
+  syncRoomCode();
   await cloudSession();
   if (!cloud.started) await cloudStartPolling();
   const { data, error } = await cloud.client.functions.invoke("sgs-post", {
@@ -1144,12 +1146,18 @@ function addFeed(html, cls, isHtml) {
 function setBanner(text) { $("banner").textContent = text; }
 
 /* ---------------- 入座 / 观战 / 大厅 ---------------- */
+function syncRoomCode() {
+  const roomCode = $("code").value.trim();
+  state.roomCode = roomCode;
+  try { localStorage.setItem("sgs_code", roomCode); } catch (e) {}
+  return roomCode;
+}
 async function doJoin() {
   const uid = $("uid").value.trim();
   if (!uid) { showToast("先报个名号"); $("uid").focus(); return; }
   const nick = $("nick").value.trim() || uid;
-  state.roomCode = $("code").value.trim();
-  try { localStorage.setItem("sgs_uid", uid); localStorage.setItem("sgs_code", state.roomCode); } catch (e) {}
+  syncRoomCode();
+  try { localStorage.setItem("sgs_uid", uid); } catch (e) {}
   if (CLOUD) {
     // 云端：先备好耳朵再敲门——入座回音（state_sync）和拒绝（susu_error）都别漏
     try {
@@ -1191,7 +1199,7 @@ async function doJoin() {
   }
 }
 async function doSpectate() {
-  state.roomCode = $("code").value.trim();
+  syncRoomCode();
   state.role = "spectator";
   document.body.classList.add("spectating");
   $("enterCard").style.display = "none";
@@ -1881,6 +1889,7 @@ $("nudgeBtn").addEventListener("click", () => {
 async function qqRequestCode() {
   const qq = $("qqNum").value.trim();
   if (!/^\d{5,12}$/.test(qq)) { showToast("QQ 号得是 5-12 位数字"); return; }
+  syncRoomCode();
   try {
     await cloudSession(); await cloudStartPolling();
     const w = cloudWaiter((e) => e.type === "verify_code" && e.qq === qq, 20000, "云端没回应，稍后再试");
@@ -1894,6 +1903,7 @@ async function qqRequestCode() {
 }
 async function qqCheckAndJoin() {
   const qq = $("qqNum").value.trim();
+  syncRoomCode();
   try {
     const w = cloudWaiter((e) => e.type === "verify_result" && e.qq === qq, 20000, "云端没回应，稍后再试");
     try { await cloudPost("verify_check", { qq }); } catch (e) { w.cancel(); throw e; }
@@ -1903,7 +1913,6 @@ async function qqCheckAndJoin() {
     $("uid").value = qq;
     if (!$("nick").value.trim() && ev.nickname) $("nick").value = ev.nickname;
     const nick = $("nick").value.trim() || qq;
-    state.roomCode = $("code").value.trim();
     const w2 = cloudWaiter(
       (e) => (e.type === "state_sync" && e.role === "seat") || e.type === "susu_error",
       20000, "云端没回应——过会儿再试");
