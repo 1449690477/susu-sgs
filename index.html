@@ -703,7 +703,9 @@ async function cloudApi(path, body) {
   if (path === "answer") return cloudPost("answer", { ask_id: body.ask_id, choice: body.choice });
   if (path === "chat") return cloudPost("chat", { text: body.text });
   if (path === "action") return cloudPost("action", { action: body.action });
-  if (path === "susu/join") return cloudPost("susu_join", {});  // M3.1 增补
+  // 兼容早期已部署的 sgs-post：旧函数尚无 susu_join 白名单，但 chat 从首版就支持。
+  // 家里的桥截获这条内部指令，不会把它作为桌聊广播。
+  if (path === "susu/join") return cloudPost("chat", { text: "/__sgs_susu_join__" });
   throw new Error("云端不认识的接口: " + path);
 }
 
