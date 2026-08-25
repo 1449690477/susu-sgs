@@ -558,6 +558,7 @@ const state = {
   lastSeq: 0,
   askDeadline: 0,      // 倒计时
   picking: null,       // 进行中的多选交互 {kind, ids:Set, need, ...}
+  answerSending: false, // 云端函数返回前锁住本次作答，防双击写两封同 ask_id 信件
 };
 let ws = null, wsClosed = false, cdTimer = null;
 
@@ -710,8 +711,11 @@ async function cloudApi(path, body) {
 }
 
 async function sendAnswer(choice) {
-  if (!state.ask) return;
+  if (!state.ask || state.answerSending) return;
   const askId = state.ask.ask_id;
+  state.answerSending = true;
+  const box = $("askOptions");
+  for (const b of box.querySelectorAll("button")) b.disabled = true;
   try {
     await api("answer", { seat_token: state.seatToken, ask_id: askId,
                           choice, room_code: state.roomCode });
@@ -720,6 +724,8 @@ async function sendAnswer(choice) {
   } catch (e) {
     showToast(e.message || "这一手没送出去");
     renderAsk(); // 非法作答服务端会重发同一 ask：把面板原样摆回来
+  } finally {
+    state.answerSending = false;
   }
 }
 function sendChat() {
@@ -1166,6 +1172,7 @@ function renderHand(cards) {
 /* ---------------- 询问面板（方案 6.5 全 kind） ---------------- */
 function setAsk(ask) {
   if (!ask) return;
+  state.answerSending = false;
   if (state.ask && state.ask.ask_id === ask.ask_id) { state.ask = ask; renderAsk(); return; }
   state.ask = ask;
   state.picking = null;
@@ -1174,7 +1181,7 @@ function setAsk(ask) {
   renderAll();       // 手牌可用态跟着询问变
 }
 function hideAsk(clearAsk) {
-  if (clearAsk) { state.ask = null; state.picking = null; }
+  if (clearAsk) { state.ask = null; state.picking = null; state.answerSending = false; }
   $("askSheet").style.display = "none";
   if (cdTimer) { clearInterval(cdTimer); cdTimer = null; }
 }
