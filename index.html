@@ -773,6 +773,20 @@ function handleMessage(msg) {
       if (msg.role) state.role = msg.role;
       if (typeof msg.seat === "number") state.seat = msg.seat;
       state.snapshot = msg.snapshot || {};
+      if (msg.seat_revoked) {
+        state.role = null; state.seat = null; state.seatToken = ""; state.ask = null;
+        try {
+          localStorage.removeItem("sgs_seat_uid");
+          localStorage.removeItem("sgs_seat_token");
+          localStorage.removeItem("sgs_cloud_seated");
+        } catch (e) {}
+        $("lobbyCard").style.display = "none";
+        $("tableCard").style.display = "none";
+        $("enterCard").style.display = "block";
+        hideAsk(true);
+        showToast("牌桌已清场，请重新入座");
+        break;
+      }
       const game = state.snapshot.game;
       // 我的未决询问以快照为准（断线重连恢复浮层就靠它）
       if (state.role === "seat" && game && game.ask) setAsk(game.ask);
